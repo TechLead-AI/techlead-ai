@@ -154,6 +154,41 @@ smee.io shows every delivery and its response.
 
 ---
 
+## Running it again (after a restart)
+
+The one-time setup above persists — the GitHub App, the smee channel, the
+secrets in `.env`, and the registered repo + juniors all survive a reboot. To go
+live again you just restart the moving parts (each in its own terminal):
+
+```bash
+docker compose up -d   # 1. Postgres (skip if already running)
+npm run dev            # 2. the web app — serves the dashboard AND the webhook
+npm run worker         # 3. runs the reviewer and posts comments back
+# 4. relay GitHub deliveries to your local server:
+npx smee-client --url https://smee.io/EICH7VLhWYHfanw \
+  --target http://localhost:3000/api/github/webhook
+```
+
+Then open or push to a PR from a registered junior and the review posts within a
+minute.
+
+**Which reviewer runs** is decided by `.env`, read when the **worker** starts:
+
+- `ANTHROPIC_API_KEY=""` (blank) → the offline `FakeReviewer` (smell scan).
+- `ANTHROPIC_API_KEY="sk-ant-…"` → the real Claude reviewer (set `REVIEW_MODEL`
+  too if you want a specific model).
+
+Change the key while the worker is running? Restart the worker so it picks it up.
+
+Quick sanity check before opening a test PR — confirms the App still
+authenticates and is still installed on the repo:
+
+```bash
+npm run check:github
+```
+
+---
+
 ## Troubleshooting
 
 | Symptom | Likely cause |
