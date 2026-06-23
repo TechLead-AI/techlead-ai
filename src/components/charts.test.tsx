@@ -11,10 +11,11 @@ describe("LineChart", () => {
     expect(screen.getByText(/no data yet/i)).toBeInTheDocument();
   });
 
-  it("renders an svg with one dot per point", () => {
+  it("renders one hit-area circle per point", () => {
     const { container } = render(<LineChart points={[pt(1), pt(2), pt(3)]} />);
     expect(container.querySelector("polyline")).not.toBeNull();
-    expect(container.querySelectorAll("circle")).toHaveLength(3);
+    // Each point has an invisible hit-target circle plus a visible dot.
+    expect(container.querySelectorAll('circle[fill="transparent"]')).toHaveLength(3);
   });
 
   it("links a point that has an href", () => {

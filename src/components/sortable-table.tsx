@@ -2,6 +2,7 @@
 
 import { useMemo, useState, type CSSProperties } from "react";
 import { TrendBadge } from "./charts";
+import { StatusBadge } from "./ui";
 import { formatDate } from "@/lib/format";
 import type { TrendDirection } from "@/server/db/dashboard";
 
@@ -13,7 +14,14 @@ import type { TrendDirection } from "@/server/db/dashboard";
  * Clicking any header sorts by that column (toggling direction); a search box
  * (when `searchKeys` is given) filters rows by substring across those keys.
  */
-export type ColumnType = "text" | "number" | "percent" | "date" | "link" | "badge";
+export type ColumnType =
+  | "text"
+  | "number"
+  | "percent"
+  | "date"
+  | "link"
+  | "badge"
+  | "status";
 
 export interface Column {
   key: string;
@@ -183,6 +191,8 @@ function Cell({ column, row }: { column: Column; row: Row }) {
   switch (column.type) {
     case "badge":
       return <TrendBadge trend={value as TrendDirection} />;
+    case "status":
+      return <StatusBadge status={String(value ?? "")} />;
     case "percent":
       return <>{value == null ? "—" : `${Math.round(Number(value) * 100)}%`}</>;
     case "date":

@@ -1,4 +1,5 @@
 import type { ConventionScope } from "@/server/conventions/merge";
+import { DocIcon } from "./icons";
 
 /**
  * One editable convention layer in the tree. Collapsed by default; expanding it
@@ -32,9 +33,19 @@ export function ConventionEditor({
       }}
     >
       <summary style={{ cursor: "pointer", display: "flex", gap: 8, alignItems: "center" }}>
-        <span>📄</span>
+        <span style={{ color: hasDoc ? "var(--accent)" : "var(--muted)", display: "flex" }}>
+          <DocIcon />
+        </span>
         <span style={{ fontWeight: 600 }}>{label}</span>
-        <span style={{ color: "var(--muted)", fontSize: 12 }}>
+        <span
+          style={{
+            color: hasDoc ? "var(--good)" : "var(--muted)",
+            fontSize: 12,
+            border: "1px solid var(--border)",
+            borderRadius: 999,
+            padding: "0 8px",
+          }}
+        >
           {hasDoc ? `v${version}` : "not set"}
         </span>
       </summary>

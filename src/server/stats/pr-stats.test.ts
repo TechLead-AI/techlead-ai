@@ -14,6 +14,7 @@ function pr(authorName: string, createdAt: Date): PRListItem {
     createdAt,
     latestDensity: null,
     commentCount: 0,
+    highSeverityCount: 0,
   };
 }
 

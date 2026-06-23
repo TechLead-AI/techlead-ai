@@ -142,7 +142,7 @@ function slicePaths(
   });
 }
 
-const HMARGIN = { top: 10, right: 8, bottom: 22, left: 26 };
+const HMARGIN = { top: 10, right: 10, bottom: 42, left: 26 };
 
 /** A vertical-bar histogram of PRs per day. */
 export function Histogram({
@@ -164,6 +164,26 @@ export function Histogram({
   const axis = "var(--border)";
   const tickText = { fontSize: 10, fill: "var(--muted)" } as const;
 
+  // Thin labels in busy stretches: within a run of consecutive active days,
+  // label every other day, anchored so the most recent day is always labelled
+  // (so a 5-day run shows the last, third-from-last, and so on). Isolated days
+  // are always labelled.
+  const DAY = 24 * 60 * 60 * 1000;
+  const labelDays = new Set<number>();
+  const active = data.filter((d) => d.count > 0);
+  const runs: DayCount[][] = [];
+  for (const d of active) {
+    const run = runs[runs.length - 1];
+    if (run && d.dateMs - run[run.length - 1].dateMs <= DAY * 1.5) run.push(d);
+    else runs.push([d]);
+  }
+  for (const run of runs) {
+    run.forEach((d, k) => {
+      const fromEnd = run.length - 1 - k;
+      if (fromEnd % 2 === 0) labelDays.add(d.dateMs);
+    });
+  }
+
   return (
     <svg width={width} height={height} role="img" aria-label="PRs per day">
       {/* y axis: 0 and max */}
@@ -175,35 +195,41 @@ export function Histogram({
         0
       </text>
 
-      {/* x axis baseline + first/last day labels */}
+      {/* x axis baseline */}
       <line x1={HMARGIN.left} y1={baseY} x2={HMARGIN.left + plotW} y2={baseY} stroke={axis} />
-      <text x={HMARGIN.left} y={height - 6} textAnchor="start" {...tickText}>
-        {data[0].label}
-      </text>
-      {data.length > 1 && (
-        <text x={HMARGIN.left + plotW} y={height - 6} textAnchor="end" {...tickText}>
-          {data[data.length - 1].label}
-        </text>
-      )}
 
       {data.map((d, i) => {
         const h = (d.count / max) * plotH;
-        const x = HMARGIN.left + i * bandW;
+        const cx = HMARGIN.left + i * bandW + bandW / 2;
         const barW = Math.max(bandW * 0.7, 1);
         return (
-          <rect
-            key={d.dateMs}
-            x={x + (bandW - barW) / 2}
-            y={baseY - h}
-            width={barW}
-            height={h}
-            fill="var(--accent)"
-            rx={1}
-          >
-            {/* Single string child: adjacent text nodes in an SVG <title> get
-                coalesced by the browser and break hydration. */}
-            <title>{`${d.label}: ${d.count}`}</title>
-          </rect>
+          <g key={d.dateMs}>
+            <rect
+              x={cx - barW / 2}
+              y={baseY - h}
+              width={barW}
+              height={h}
+              fill="var(--accent)"
+              rx={1}
+            >
+              {/* Single string child: adjacent text nodes in an SVG <title> get
+                  coalesced by the browser and break hydration. */}
+              <title>{`${d.label}: ${d.count}`}</title>
+            </rect>
+            {/* Label active days, thinned within consecutive runs (see above),
+                rotated so they don't overlap. */}
+            {labelDays.has(d.dateMs) && (
+              <text
+                x={cx}
+                y={baseY + 6}
+                textAnchor="end"
+                transform={`rotate(-55 ${cx} ${baseY + 6})`}
+                {...tickText}
+              >
+                {d.label}
+              </text>
+            )}
+          </g>
         );
       })}
     </svg>

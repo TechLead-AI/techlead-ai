@@ -5,3 +5,9 @@ out/
 *.tsbuildinfo
 next-env.d.ts
 coverage/
+
+# Claude Code local files
+.claude/worktrees/
+
+# macOS
+.DS_Store

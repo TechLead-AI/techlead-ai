@@ -50,8 +50,9 @@ export default async function JuniorProfilePage({
   }));
   const latest = profile.trend[profile.trend.length - 1];
 
-  // Side-by-side cards share the row and wrap on narrow screens.
-  const halfRow = { display: "flex", gap: 24, flexWrap: "wrap" } as const;
+  // Side-by-side cards share the row (stretching to equal height) and wrap on
+  // narrow screens.
+  const halfRow = { display: "flex", gap: 24, flexWrap: "wrap", alignItems: "stretch" } as const;
   const half = { flex: 1, minWidth: 280 } as const;
 
   return (
@@ -88,35 +89,27 @@ export default async function JuniorProfilePage({
       </div>
 
       <div style={halfRow}>
-        <div style={half}>
-          <Card title="Issue density over time (lower is better)">
-            <LineChart points={densityPoints} color="var(--good)" />
-          </Card>
-        </div>
-        <div style={half}>
-          <Card title="Repeat-mistake rate over time (lower is better)">
-            <LineChart points={repeatPoints} color="var(--warn)" />
-          </Card>
-        </div>
+        <Card title="Issue density over time (lower is better)" style={half}>
+          <LineChart points={densityPoints} color="var(--good)" />
+        </Card>
+        <Card title="Repeat-mistake rate over time (lower is better)" style={half}>
+          <LineChart points={repeatPoints} color="var(--warn)" />
+        </Card>
       </div>
 
       <div style={halfRow}>
-        <div style={half}>
-          <Card title="Where the feedback lands (by category)">
-            <BarList data={toBars(profile.categoryMix)} />
-          </Card>
-        </div>
-        <div style={half}>
-          <Card title="Top recurring mistakes — the 1:1 agenda">
-            {profile.topRecurringMistakes.length === 0 ? (
-              <p style={{ color: "var(--muted)" }}>
-                No repeated mistakes yet — great sign.
-              </p>
-            ) : (
-              <BarList data={toBars(profile.topRecurringMistakes)} />
-            )}
-          </Card>
-        </div>
+        <Card title="Where the feedback lands (by category)" style={half}>
+          <BarList data={toBars(profile.categoryMix)} />
+        </Card>
+        <Card title="Top recurring mistakes — the 1:1 agenda" style={half}>
+          {profile.topRecurringMistakes.length === 0 ? (
+            <p style={{ color: "var(--muted)" }}>
+              No repeated mistakes yet — great sign.
+            </p>
+          ) : (
+            <BarList data={toBars(profile.topRecurringMistakes)} />
+          )}
+        </Card>
       </div>
 
       <Card title="Recent reviews">

@@ -200,15 +200,22 @@ export async function getTeamOverview(orgId: string): Promise<TeamOverview> {
   return { juniors, commonMistakes };
 }
 
+/** One severity bar plus the comments behind it (for drill-down). */
+export interface SeverityBreakdown {
+  severity: string;
+  count: number;
+  items: CommentRef[];
+}
+
 export interface TeamStats {
   juniorCount: number;
   reviewCount: number;
   /** Average issue density across all reviewed PRs, or null if none yet. */
   avgDensity: number | null;
-  /** Comment counts per severity, highest severity first. */
-  severityCounts: { severity: string; count: number }[];
-  /** Blocker + major comments — the things worth a manager's attention. */
-  openHighSeverity: number;
+  /** Per-severity comment counts (with drill-down), highest severity first. */
+  severityBreakdown: SeverityBreakdown[];
+  /** Open PRs carrying a blocker or major — what needs a manager's eyes now. */
+  openHighSeverityPrCount: number;
 }
 
 const SEVERITY_ORDER = ["blocker", "major", "minor", "nit"] as const;
@@ -217,18 +224,39 @@ const SEVERITY_ORDER = ["blocker", "major", "minor", "nit"] as const;
 export async function getTeamStats(orgId: string): Promise<TeamStats> {
   const juniorWork = { author: { isMentoredJunior: true } };
 
-  const [juniorCount, reviewCount, metrics, comments] = await Promise.all([
-    prisma.user.count({ where: { orgId, isMentoredJunior: true } }),
-    prisma.review.count({ where: { orgId, pullRequest: juniorWork } }),
-    prisma.pRMetrics.findMany({
-      where: { orgId, pullRequest: juniorWork },
-      select: { issueDensity: true },
-    }),
-    prisma.comment.findMany({
-      where: { orgId, review: { pullRequest: juniorWork } },
-      select: { severity: true },
-    }),
-  ]);
+  const [juniorCount, reviewCount, metrics, comments, openHighSeverityPrCount] =
+    await Promise.all([
+      prisma.user.count({ where: { orgId, isMentoredJunior: true } }),
+      prisma.review.count({ where: { orgId, pullRequest: juniorWork } }),
+      prisma.pRMetrics.findMany({
+        where: { orgId, pullRequest: juniorWork },
+        select: { issueDensity: true },
+      }),
+      prisma.comment.findMany({
+        where: { orgId, review: { pullRequest: juniorWork } },
+        select: {
+          severity: true,
+          message: true,
+          review: {
+            select: {
+              pullRequest: {
+                select: { id: true, number: true, author: { select: { name: true } } },
+              },
+            },
+          },
+        },
+        orderBy: { createdAt: "desc" },
+      }),
+      // Open PRs with at least one blocker/major — the actionable backlog.
+      prisma.pullRequest.count({
+        where: {
+          orgId,
+          status: "open",
+          author: { isMentoredJunior: true },
+          reviews: { some: { comments: { some: { severity: { in: ["blocker", "major"] } } } } },
+        },
+      }),
+    ]);
 
   const avgDensity = metrics.length
     ? Math.round(
@@ -236,15 +264,24 @@ export async function getTeamStats(orgId: string): Promise<TeamStats> {
       ) / 10
     : null;
 
-  const counts: Record<string, number> = {};
-  for (const c of comments) counts[c.severity] = (counts[c.severity] ?? 0) + 1;
-  const severityCounts = SEVERITY_ORDER.map((severity) => ({
+  const bySeverity = new Map<string, CommentRef[]>();
+  for (const c of comments) {
+    const list = bySeverity.get(c.severity) ?? [];
+    list.push({
+      pullRequestId: c.review.pullRequest.id,
+      prNumber: c.review.pullRequest.number,
+      message: c.message,
+      authorName: c.review.pullRequest.author.name,
+    });
+    bySeverity.set(c.severity, list);
+  }
+  const severityBreakdown: SeverityBreakdown[] = SEVERITY_ORDER.map((severity) => ({
     severity,
-    count: counts[severity] ?? 0,
+    count: bySeverity.get(severity)?.length ?? 0,
+    items: bySeverity.get(severity) ?? [],
   }));
-  const openHighSeverity = (counts.blocker ?? 0) + (counts.major ?? 0);
 
-  return { juniorCount, reviewCount, avgDensity, severityCounts, openHighSeverity };
+  return { juniorCount, reviewCount, avgDensity, severityBreakdown, openHighSeverityPrCount };
 }
 
 /**

@@ -20,6 +20,10 @@ async function main() {
 
   // GET /app uses the App's JWT — proves the App ID + private key match.
   const { data: me } = await app.octokit.request("GET /app");
+  if (!me) {
+    console.error("GET /app returned no data — check the App ID and private key.");
+    process.exit(1);
+  }
   console.log(`Authenticated as App: ${me.name} (slug: ${me.slug}, id: ${me.id})`);
 
   // List installations — proves the App is installed on at least one account.
@@ -29,7 +33,9 @@ async function main() {
     return;
   }
   for (const inst of installs.data) {
-    const account = (inst.account && ("login" in inst.account ? inst.account.login : inst.account.slug)) ?? "?";
+    // account is a user or an enterprise (or null); both shapes are covered here.
+    const acct = inst.account as { login?: string; slug?: string } | null;
+    const account = acct?.login ?? acct?.slug ?? "?";
     console.log(`\nInstalled on: ${account} (installation ${inst.id})`);
     const octokit = await app.getInstallationOctokit(inst.id);
     const { data: repos } = await octokit.request("GET /installation/repositories");

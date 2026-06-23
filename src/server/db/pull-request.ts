@@ -68,6 +68,8 @@ export interface PRListItem {
   latestDensity: number | null;
   /** Comments on the latest review. */
   commentCount: number;
+  /** Blocker + major comments on the latest review. */
+  highSeverityCount: number;
 }
 
 /**
@@ -84,13 +86,17 @@ export async function getAllPullRequests(orgId: string): Promise<PRListItem[]> {
       reviews: {
         orderBy: { createdAt: "desc" },
         take: 1,
-        include: { metrics: true, _count: { select: { comments: true } } },
+        include: { metrics: true, comments: { select: { severity: true } } },
       },
     },
   });
 
   return prs.map((pr) => {
     const latest = pr.reviews[0];
+    const comments = latest?.comments ?? [];
+    const highSeverityCount = comments.filter(
+      (c) => c.severity === "blocker" || c.severity === "major",
+    ).length;
     return {
       id: pr.id,
       number: pr.number,
@@ -101,7 +107,8 @@ export async function getAllPullRequests(orgId: string): Promise<PRListItem[]> {
       repoFullName: pr.repo.fullName,
       createdAt: pr.createdAt,
       latestDensity: latest?.metrics?.issueDensity ?? null,
-      commentCount: latest?._count.comments ?? 0,
+      commentCount: comments.length,
+      highSeverityCount,
     };
   });
 }
