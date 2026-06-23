@@ -60,7 +60,10 @@ npm run dev:clean
 ```
 
 Don't run `npm run build` against the same checkout you're actively running
-`npm run dev` in without clearing `.next` afterwards.
+`npm run dev` in without clearing `.next` afterwards. Likewise, don't run two
+`next dev` servers on the same checkout — they'd share (and corrupt) one
+`.next`. A second server should use a separate build dir, e.g.
+`NEXT_DIST_DIR=.next-preview next dev` (see the `dev:preview` script).
 
 ## How it fits together
 

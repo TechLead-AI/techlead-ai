@@ -1,6 +1,9 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   reactStrictMode: true,
+  // Allow a separate build dir (e.g. the Claude preview server) so two dev
+  // servers on the same checkout never share — and corrupt — one `.next`.
+  distDir: process.env.NEXT_DIST_DIR || ".next",
   // Hide the floating Next.js dev-tools indicator in the local demo.
   devIndicators: false,
   webpack: (config, { dev }) => {
