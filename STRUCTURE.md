@@ -9,6 +9,7 @@
 |------|---------|
 | `DESIGN.md` | Product & system design — what we're building and why |
 | `MVP.md` | The step-by-step build plan for the demo |
+| `CONNECT_GITHUB.md` | How to connect a real GitHub repo for live PR reviews |
 | `CLAUDE.md` | How to write code in this repo |
 | `STRUCTURE.md` | This file — the codebase map |
 
@@ -33,6 +34,8 @@ Each module is small files with co-located `*.test.ts`.
     schema.prisma             # data model (component 6)
     migrations/               # init + add_review_summary
     seed.ts                   # realistic demo data via the real pipeline
+  scripts/
+    onboard-repo.ts           # CLI: register a real repo + juniors (npm run onboard)
   src/
     app/
       page.tsx                # home
@@ -80,6 +83,9 @@ Each module is small files with co-located `*.test.ts`.
         webhook.ts            # parse + decide + process events (components 1)
         client.ts             # Octokit + batched-review payload (components 1,5)
         post.ts               # post a stored review back to GitHub
+      onboarding/
+        onboard.ts            # register a real repo + mentored juniors (+ test)
+        store.ts              # Prisma adapter for the onboarding orchestration
       queue/
         jobs.ts               # job data + shared handler
         queue.ts              # pg-boss setup, enqueue, worker registration
