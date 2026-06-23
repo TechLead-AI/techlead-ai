@@ -1,0 +1,211 @@
+"use client";
+
+import { useState } from "react";
+import type { CountSlice, DayCount } from "@/server/stats/pr-stats";
+
+/**
+ * SVG figures for the all-PRs page: a pie chart (PRs per junior) and a histogram
+ * (PRs per day). Dependency-free. The pie is interactive — hovering a slice (or
+ * its legend row) shows the junior and their PR count.
+ */
+
+const PALETTE = [
+  "#6ea8fe",
+  "#4ade80",
+  "#fbbf24",
+  "#f87171",
+  "#a78bfa",
+  "#34d399",
+  "#f472b6",
+  "#fb923c",
+];
+
+// Pie and histogram share this height so the two cards line up side by side.
+const FIGURE_HEIGHT = 180;
+
+/** A pie chart with an interactive legend. */
+export function PieChart({ data, size = FIGURE_HEIGHT }: { data: CountSlice[]; size?: number }) {
+  const [hover, setHover] = useState<number | null>(null);
+  const total = data.reduce((s, d) => s + d.count, 0);
+  if (total === 0) return <p style={{ color: "var(--muted)" }}>No data yet.</p>;
+
+  const r = size / 2;
+  const colored = data.map((d, i) => ({ ...d, color: PALETTE[i % PALETTE.length] }));
+  const single = colored.length === 1;
+
+  return (
+    <div style={{ display: "flex", gap: 20, alignItems: "center", flexWrap: "wrap" }}>
+      <div style={{ position: "relative", width: size, height: size }}>
+        <svg width={size} height={size} role="img" aria-label="PRs per junior">
+          {single ? (
+            <circle
+              cx={r}
+              cy={r}
+              r={r}
+              fill={colored[0].color}
+              onMouseEnter={() => setHover(0)}
+              onMouseLeave={() => setHover(null)}
+            />
+          ) : (
+            slicePaths(colored, total, r, hover, setHover)
+          )}
+        </svg>
+        {hover !== null && (
+          <div
+            style={{
+              position: "absolute",
+              left: r,
+              top: r,
+              transform: "translate(-50%, -50%)",
+              background: "var(--panel-2)",
+              border: "1px solid var(--border)",
+              borderRadius: 6,
+              padding: "4px 8px",
+              fontSize: 12,
+              whiteSpace: "nowrap",
+              pointerEvents: "none",
+              textAlign: "center",
+            }}
+          >
+            <strong>{colored[hover].label}</strong>
+            <br />
+            {colored[hover].count} PR{colored[hover].count === 1 ? "" : "s"} (
+            {Math.round((colored[hover].count / total) * 100)}%)
+          </div>
+        )}
+      </div>
+
+      <ul style={{ listStyle: "none", margin: 0, padding: 0, fontSize: 13 }}>
+        {colored.map((d, i) => (
+          <li
+            key={d.label}
+            onMouseEnter={() => setHover(i)}
+            onMouseLeave={() => setHover(null)}
+            style={{
+              display: "flex",
+              alignItems: "center",
+              gap: 8,
+              marginBottom: 4,
+              cursor: "default",
+              opacity: hover === null || hover === i ? 1 : 0.5,
+            }}
+          >
+            <span
+              style={{
+                width: 12,
+                height: 12,
+                borderRadius: 3,
+                background: d.color,
+                display: "inline-block",
+              }}
+            />
+            <span>{d.label}</span>
+            <span style={{ color: "var(--muted)" }}>
+              {d.count} ({Math.round((d.count / total) * 100)}%)
+            </span>
+          </li>
+        ))}
+      </ul>
+    </div>
+  );
+}
+
+function slicePaths(
+  data: (CountSlice & { color: string })[],
+  total: number,
+  r: number,
+  hover: number | null,
+  setHover: (i: number | null) => void,
+) {
+  let angle = -Math.PI / 2; // start at 12 o'clock
+  return data.map((d, i) => {
+    const start = angle;
+    const end = angle + (d.count / total) * 2 * Math.PI;
+    angle = end;
+    const large = end - start > Math.PI ? 1 : 0;
+    const x1 = r + r * Math.cos(start);
+    const y1 = r + r * Math.sin(start);
+    const x2 = r + r * Math.cos(end);
+    const y2 = r + r * Math.sin(end);
+    const path = `M ${r} ${r} L ${x1.toFixed(2)} ${y1.toFixed(2)} A ${r} ${r} 0 ${large} 1 ${x2.toFixed(2)} ${y2.toFixed(2)} Z`;
+    return (
+      <path
+        key={d.label}
+        d={path}
+        fill={d.color}
+        opacity={hover === null || hover === i ? 1 : 0.5}
+        onMouseEnter={() => setHover(i)}
+        onMouseLeave={() => setHover(null)}
+        style={{ cursor: "default" }}
+      />
+    );
+  });
+}
+
+const HMARGIN = { top: 10, right: 8, bottom: 22, left: 26 };
+
+/** A vertical-bar histogram of PRs per day. */
+export function Histogram({
+  data,
+  width = 360,
+  height = FIGURE_HEIGHT,
+}: {
+  data: DayCount[];
+  width?: number;
+  height?: number;
+}) {
+  if (data.length === 0) return <p style={{ color: "var(--muted)" }}>No data yet.</p>;
+
+  const plotW = width - HMARGIN.left - HMARGIN.right;
+  const plotH = height - HMARGIN.top - HMARGIN.bottom;
+  const baseY = HMARGIN.top + plotH;
+  const max = Math.max(...data.map((d) => d.count), 1);
+  const bandW = plotW / data.length;
+  const axis = "var(--border)";
+  const tickText = { fontSize: 10, fill: "var(--muted)" } as const;
+
+  return (
+    <svg width={width} height={height} role="img" aria-label="PRs per day">
+      {/* y axis: 0 and max */}
+      <line x1={HMARGIN.left} y1={HMARGIN.top} x2={HMARGIN.left} y2={baseY} stroke={axis} />
+      <text x={HMARGIN.left - 4} y={HMARGIN.top + 4} textAnchor="end" {...tickText}>
+        {max}
+      </text>
+      <text x={HMARGIN.left - 4} y={baseY} textAnchor="end" {...tickText}>
+        0
+      </text>
+
+      {/* x axis baseline + first/last day labels */}
+      <line x1={HMARGIN.left} y1={baseY} x2={HMARGIN.left + plotW} y2={baseY} stroke={axis} />
+      <text x={HMARGIN.left} y={height - 6} textAnchor="start" {...tickText}>
+        {data[0].label}
+      </text>
+      {data.length > 1 && (
+        <text x={HMARGIN.left + plotW} y={height - 6} textAnchor="end" {...tickText}>
+          {data[data.length - 1].label}
+        </text>
+      )}
+
+      {data.map((d, i) => {
+        const h = (d.count / max) * plotH;
+        const x = HMARGIN.left + i * bandW;
+        const barW = Math.max(bandW * 0.7, 1);
+        return (
+          <rect
+            key={d.dateMs}
+            x={x + (bandW - barW) / 2}
+            y={baseY - h}
+            width={barW}
+            height={h}
+            fill="var(--accent)"
+            rx={1}
+          >
+            {/* Single string child: adjacent text nodes in an SVG <title> get
+                coalesced by the browser and break hydration. */}
+            <title>{`${d.label}: ${d.count}`}</title>
+          </rect>
+        );
+      })}
+    </svg>
+  );
+}

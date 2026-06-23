@@ -1,0 +1,255 @@
+// Tech Lead AI data model. See DESIGN.md component 6.
+// Rules: every table carries org_id (multi-tenant from day one);
+// PRMetrics rows are immutable once written (enforced in code, see db layer).
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum Role {
+  manager
+  junior
+  admin
+}
+
+enum Severity {
+  blocker
+  major
+  minor
+  nit
+}
+
+enum Category {
+  bug
+  security
+  design
+  test
+  convention
+  readability
+  naming
+}
+
+enum ConventionScope {
+  org
+  team
+  repo
+}
+
+enum PullRequestStatus {
+  open
+  merged
+  closed
+}
+
+model Org {
+  id        String   @id @default(cuid())
+  name      String
+  createdAt DateTime @default(now())
+
+  teams          Team[]
+  users          User[]
+  repos          Repo[]
+  conventionDocs ConventionDoc[]
+  pullRequests   PullRequest[]
+  reviews        Review[]
+  comments       Comment[]
+  feedback       CommentFeedback[]
+  prMetrics      PRMetrics[]
+}
+
+model Team {
+  id    String @id @default(cuid())
+  orgId String
+  org   Org    @relation(fields: [orgId], references: [id], onDelete: Cascade)
+  name  String
+
+  users          User[]
+  conventionDocs ConventionDoc[]
+
+  @@index([orgId])
+}
+
+model User {
+  id        String   @id @default(cuid())
+  orgId     String
+  org       Org      @relation(fields: [orgId], references: [id], onDelete: Cascade)
+  teamId    String?
+  team      Team?    @relation(fields: [teamId], references: [id], onDelete: SetNull)
+  role      Role
+  // GitHub identity (juniors are identified by handle; managers also log in).
+  githubLogin String
+  name        String
+  // Only PRs from users flagged as mentored juniors get reviewed.
+  isMentoredJunior Boolean @default(false)
+  createdAt DateTime @default(now())
+
+  authoredPRs PullRequest[]
+
+  @@unique([orgId, githubLogin])
+  @@index([orgId])
+  @@index([teamId])
+}
+
+model Repo {
+  id        String @id @default(cuid())
+  orgId     String
+  org       Org    @relation(fields: [orgId], references: [id], onDelete: Cascade)
+  // "owner/name" on GitHub.
+  fullName  String
+  createdAt DateTime @default(now())
+
+  pullRequests   PullRequest[]
+  conventionDocs ConventionDoc[]
+
+  @@unique([orgId, fullName])
+  @@index([orgId])
+}
+
+// Layered convention docs (org / team / repo), versioned. A review references
+// the rules as they were when it ran.
+model ConventionDoc {
+  id        String          @id @default(cuid())
+  orgId     String
+  org       Org             @relation(fields: [orgId], references: [id], onDelete: Cascade)
+  scope     ConventionScope
+  teamId    String?
+  team      Team?           @relation(fields: [teamId], references: [id], onDelete: Cascade)
+  repoId    String?
+  repo      Repo?           @relation(fields: [repoId], references: [id], onDelete: Cascade)
+  version   Int             @default(1)
+  markdown  String
+  createdAt DateTime        @default(now())
+
+  @@index([orgId])
+  @@index([orgId, scope])
+}
+
+model PullRequest {
+  id        String            @id @default(cuid())
+  orgId     String
+  org       Org               @relation(fields: [orgId], references: [id], onDelete: Cascade)
+  repoId    String
+  repo      Repo              @relation(fields: [repoId], references: [id], onDelete: Cascade)
+  authorId  String
+  author    User              @relation(fields: [authorId], references: [id], onDelete: Cascade)
+  number    Int
+  title     String
+  status    PullRequestStatus @default(open)
+  // Size in changed lines, used to normalise issue density.
+  linesChanged Int
+  createdAt DateTime          @default(now())
+
+  reviews   Review[]
+  prMetrics PRMetrics[]
+
+  @@unique([repoId, number])
+  @@index([orgId])
+  @@index([authorId])
+}
+
+// One row per review run on a PR.
+model Review {
+  id            String   @id @default(cuid())
+  orgId         String
+  org           Org      @relation(fields: [orgId], references: [id], onDelete: Cascade)
+  pullRequestId String
+  pullRequest   PullRequest @relation(fields: [pullRequestId], references: [id], onDelete: Cascade)
+  // Which commit was reviewed (idempotency key for webhooks).
+  headSha       String
+  modelVersion  String
+  // The top-level PR summary comment produced by the engine.
+  summary       String   @default("")
+  tokenCost     Int      @default(0)
+  createdAt     DateTime @default(now())
+
+  comments Comment[]
+  metrics  PRMetrics?
+
+  @@unique([pullRequestId, headSha])
+  @@index([orgId])
+  @@index([pullRequestId])
+}
+
+model Comment {
+  id        String   @id @default(cuid())
+  orgId     String
+  org       Org      @relation(fields: [orgId], references: [id], onDelete: Cascade)
+  reviewId  String
+  review    Review   @relation(fields: [reviewId], references: [id], onDelete: Cascade)
+
+  filePath  String
+  lineStart Int
+  lineEnd   Int
+  category  Category
+  severity  Severity
+  // 0..1 model certainty; drives the auto-post confidence gate.
+  confidence Float
+  message    String
+  // The mentoring: why this matters. Mandatory by product rule.
+  why        String
+  suggestion String?
+  // Which convention rule this maps to, or "general".
+  conventionRef String?
+  // Whether this was actually posted to GitHub (gates may suppress it).
+  posted        Boolean @default(false)
+  githubCommentId String?
+
+  // Self-reference: this comment repeats an earlier mistake.
+  repeatOfId String?
+  repeatOf   Comment?  @relation("Repeat", fields: [repeatOfId], references: [id], onDelete: SetNull)
+  repeats    Comment[] @relation("Repeat")
+
+  createdAt DateTime @default(now())
+
+  feedback CommentFeedback[]
+
+  @@index([orgId])
+  @@index([reviewId])
+  @@index([repeatOfId])
+}
+
+// The junior's "this was wrong" signal — the only wrongness signal under
+// full automation.
+model CommentFeedback {
+  id        String   @id @default(cuid())
+  orgId     String
+  org       Org      @relation(fields: [orgId], references: [id], onDelete: Cascade)
+  commentId String
+  comment   Comment  @relation(fields: [commentId], references: [id], onDelete: Cascade)
+  // true = junior flagged the comment as wrong/unhelpful.
+  wrong     Boolean
+  note      String?
+  createdAt DateTime @default(now())
+
+  @@index([orgId])
+  @@index([commentId])
+}
+
+// Frozen per-PR snapshot of how the junior did. Immutable once written:
+// the model and scoring formula change over time, so charts must not shift.
+model PRMetrics {
+  id            String   @id @default(cuid())
+  orgId         String
+  org           Org      @relation(fields: [orgId], references: [id], onDelete: Cascade)
+  pullRequestId String
+  pullRequest   PullRequest @relation(fields: [pullRequestId], references: [id], onDelete: Cascade)
+  reviewId      String   @unique
+  review        Review   @relation(fields: [reviewId], references: [id], onDelete: Cascade)
+
+  // Weighted severity per 100 lines changed.
+  issueDensity  Float
+  // Share (0..1) of comments that repeat a past mistake.
+  repeatRate    Float
+  // Counts per category, stored as JSON {category: count}.
+  categoryMix   Json
+  commentCount  Int
+  createdAt     DateTime @default(now())
+
+  @@index([orgId])
+  @@index([pullRequestId])
+}
