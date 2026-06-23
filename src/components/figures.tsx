@@ -142,7 +142,7 @@ function slicePaths(
   });
 }
 
-const HMARGIN = { top: 10, right: 8, bottom: 22, left: 26 };
+const HMARGIN = { top: 10, right: 10, bottom: 42, left: 26 };
 
 /** A vertical-bar histogram of PRs per day. */
 export function Histogram({
@@ -175,35 +175,41 @@ export function Histogram({
         0
       </text>
 
-      {/* x axis baseline + first/last day labels */}
+      {/* x axis baseline */}
       <line x1={HMARGIN.left} y1={baseY} x2={HMARGIN.left + plotW} y2={baseY} stroke={axis} />
-      <text x={HMARGIN.left} y={height - 6} textAnchor="start" {...tickText}>
-        {data[0].label}
-      </text>
-      {data.length > 1 && (
-        <text x={HMARGIN.left + plotW} y={height - 6} textAnchor="end" {...tickText}>
-          {data[data.length - 1].label}
-        </text>
-      )}
 
       {data.map((d, i) => {
         const h = (d.count / max) * plotH;
-        const x = HMARGIN.left + i * bandW;
+        const cx = HMARGIN.left + i * bandW + bandW / 2;
         const barW = Math.max(bandW * 0.7, 1);
         return (
-          <rect
-            key={d.dateMs}
-            x={x + (bandW - barW) / 2}
-            y={baseY - h}
-            width={barW}
-            height={h}
-            fill="var(--accent)"
-            rx={1}
-          >
-            {/* Single string child: adjacent text nodes in an SVG <title> get
-                coalesced by the browser and break hydration. */}
-            <title>{`${d.label}: ${d.count}`}</title>
-          </rect>
+          <g key={d.dateMs}>
+            <rect
+              x={cx - barW / 2}
+              y={baseY - h}
+              width={barW}
+              height={h}
+              fill="var(--accent)"
+              rx={1}
+            >
+              {/* Single string child: adjacent text nodes in an SVG <title> get
+                  coalesced by the browser and break hydration. */}
+              <title>{`${d.label}: ${d.count}`}</title>
+            </rect>
+            {/* Label only the days that actually have PRs, rotated so dense
+                spans don't overlap. */}
+            {d.count > 0 && (
+              <text
+                x={cx}
+                y={baseY + 6}
+                textAnchor="end"
+                transform={`rotate(-55 ${cx} ${baseY + 6})`}
+                {...tickText}
+              >
+                {d.label}
+              </text>
+            )}
+          </g>
         );
       })}
     </svg>

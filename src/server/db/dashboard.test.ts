@@ -134,9 +134,13 @@ describe("dashboard queries", () => {
     expect(stats.juniorCount).toBe(1);
     expect(stats.reviewCount).toBe(1);
     expect(stats.avgDensity).not.toBeNull();
-    // The hard-coded secret is a blocker, so high-severity count is at least 1.
-    expect(stats.openHighSeverity).toBeGreaterThanOrEqual(1);
-    expect(stats.severityCounts.find((s) => s.severity === "blocker")!.count).toBe(1);
+    // The PR is open (default) and has a hard-coded secret (blocker), so it
+    // counts as an open blocker/major PR.
+    expect(stats.openHighSeverityPrCount).toBeGreaterThanOrEqual(1);
+    const blocker = stats.severityBreakdown.find((s) => s.severity === "blocker");
+    expect(blocker!.count).toBe(1);
+    // Severity bars drill down to the PR behind them.
+    expect(blocker!.items[0].pullRequestId).toBeTruthy();
   });
 });
 

@@ -57,9 +57,10 @@ async function makePR(
   authorId: string,
   number: number,
   title: string,
+  status: "open" | "merged" | "closed" = "merged",
 ) {
   return prisma.pullRequest.create({
-    data: { orgId, repoId, authorId, number, title, linesChanged: 120, status: "merged" },
+    data: { orgId, repoId, authorId, number, title, linesChanged: 120, status },
   });
 }
 
@@ -188,6 +189,26 @@ async function main() {
     const pr = await makePR(org.id, repo.id, norm.id, 400 + i, `Norm feature ${i + 1}`);
     await reviewAndBackdate(org.id, pr.id, `norm-sha-${i}`, normPRs[i].d, normPRs[i].days);
   }
+
+  // --- A couple of OPEN PRs carrying blockers/majors: the actionable backlog
+  // the manager's "Open blocker/major PRs" stat links to. ---
+  console.log("Seeding open high-severity PRs...");
+  const razOpen = await makePR(org.id, repo.id, raz.id, 110, "Raz hotfix (WIP)", "open");
+  await reviewAndBackdate(
+    org.id,
+    razOpen.id,
+    "raz-open-0",
+    diff("hotfix.ts", [SMELLS.secret, SMELLS.emptyCatch, SMELLS.consoleLog]),
+    1,
+  );
+  const normOpen = await makePR(org.id, repo.id, norm.id, 410, "Norm new endpoint (WIP)", "open");
+  await reviewAndBackdate(
+    org.id,
+    normOpen.id,
+    "norm-open-0",
+    diff("endpoint.ts", [SMELLS.secret, SMELLS.emptyCatch]),
+    1,
+  );
 
   const counts = {
     orgs: await prisma.org.count(),

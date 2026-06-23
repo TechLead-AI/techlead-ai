@@ -29,7 +29,7 @@ npm run worker                # consumes queued reviews (GitHub webhook path)
 ```
 
 Open http://localhost:3000, click **Go to the dashboard**, and sign in as
-**Morgan (Manager)** to see the team view, or as a junior to see their own
+**Shir** (the manager) to see the team view, or as a junior to see their own
 growth. Use **Review a PR** to paste a diff and run a real review on demand.
 
 The demo runs fully offline: with no `ANTHROPIC_API_KEY`, an offline
@@ -43,6 +43,24 @@ npm test          # all unit + integration tests (needs Postgres running)
 npm run typecheck # TypeScript
 npm run build     # production build
 ```
+
+## Troubleshooting
+
+**"Internal Server Error" / `__webpack_modules__[moduleId] is not a function`** —
+caused by a corrupted `.next` webpack cache (a production `next build` sharing
+the dev `.next`, or an on-disk cache rename race). `next.config.mjs` uses an
+in-memory webpack cache in dev to avoid the latter; if it still happens, clear
+and restart:
+
+```bash
+npm run clean     # rm -rf .next
+npm run dev
+# or in one step:
+npm run dev:clean
+```
+
+Don't run `npm run build` against the same checkout you're actively running
+`npm run dev` in without clearing `.next` afterwards.
 
 ## How it fits together
 

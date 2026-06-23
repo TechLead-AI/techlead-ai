@@ -63,6 +63,7 @@ Each module is small files with co-located `*.test.ts`.
       sortable-table.tsx      # generic sortable/searchable table (client; + test)
       comment-card.tsx        # renders one review comment with all Layer 1 data
       convention-editor.tsx   # one editable convention layer (collapsible form)
+      icons.tsx               # inline SVG glyphs (folder, document) for the tree
       ui.tsx                  # Card, Stat, SeverityBadge, StatusBadge, Tag
     server/
       auth/session.ts         # cookie session (component 8)

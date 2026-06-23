@@ -14,7 +14,7 @@ export function formatDate(input: Date | string | number): string {
   return `${pad(d.getUTCDate())}/${pad(d.getUTCMonth() + 1)}/${d.getUTCFullYear()}`;
 }
 
-/** "DD/MM", e.g. "09/06" — for compact axis ticks. */
+/** "DD/MM", e.g. "09/06" — for compact axis ticks (used by chart labels). */
 export function formatDayMonth(input: Date | string | number): string {
   const d = new Date(input);
   return `${pad(d.getUTCDate())}/${pad(d.getUTCMonth() + 1)}`;

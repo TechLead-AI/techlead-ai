@@ -5,6 +5,8 @@
   "type": "module",
   "scripts": {
     "dev": "next dev",
+    "dev:clean": "rm -rf .next && next dev",
+    "clean": "rm -rf .next",
     "build": "next build",
     "start": "next start",
     "worker": "tsx src/worker/index.ts",

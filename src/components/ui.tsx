@@ -1,7 +1,18 @@
-import type { ReactNode } from "react";
+import type { CSSProperties, ReactNode } from "react";
 
-/** A simple panel/card used across the dashboards. */
-export function Card({ title, children }: { title?: string; children: ReactNode }) {
+/**
+ * A simple panel/card used across the dashboards. Accepts an optional `style`
+ * so callers can, e.g., make side-by-side cards flex to equal height.
+ */
+export function Card({
+  title,
+  children,
+  style,
+}: {
+  title?: string;
+  children: ReactNode;
+  style?: CSSProperties;
+}) {
   return (
     <section
       style={{
@@ -9,6 +20,7 @@ export function Card({ title, children }: { title?: string; children: ReactNode 
         border: "1px solid var(--border)",
         borderRadius: 12,
         padding: 20,
+        ...style,
       }}
     >
       {title && <h3 style={{ margin: "0 0 12px" }}>{title}</h3>}

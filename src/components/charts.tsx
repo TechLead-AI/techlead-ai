@@ -92,25 +92,34 @@ export function LineChart({
         />
         {coords.map((c, i) => {
           const p = points[i];
-          const dot = (
-            <circle
-              cx={c.x}
-              cy={c.y}
-              r={hover === i ? 5 : 3}
-              fill={color}
-              style={{ cursor: p.href ? "pointer" : "default" }}
+          const active = hover === i;
+          const node = (
+            <g
               onMouseEnter={() => setHover(i)}
               onMouseLeave={() => setHover(null)}
-            />
+              style={{ cursor: p.href ? "pointer" : "default" }}
+            >
+              {/* Generous invisible hit target so you don't need pixel-perfect aim. */}
+              <circle cx={c.x} cy={c.y} r={14} fill="transparent" />
+              {/* Visible dot grows and gains a ring when hovered. */}
+              <circle
+                cx={c.x}
+                cy={c.y}
+                r={active ? 6 : 3.5}
+                fill={color}
+                stroke={active ? "var(--bg)" : "none"}
+                strokeWidth={active ? 2 : 0}
+              />
+            </g>
           );
           // An SVG anchor makes the point a real link when there is somewhere
           // to go; otherwise it is just a hoverable dot.
           return p.href ? (
             <a key={i} href={p.href}>
-              {dot}
+              {node}
             </a>
           ) : (
-            <g key={i}>{dot}</g>
+            <g key={i}>{node}</g>
           );
         })}
       </svg>

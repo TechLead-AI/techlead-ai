@@ -1,9 +1,29 @@
+import { Fragment } from "react";
 import { redirect } from "next/navigation";
 import { getSessionUser } from "@/server/auth/session";
-import { getTeamOverview, getTeamStats, needsAttention } from "@/server/db/dashboard";
+import {
+  getTeamOverview,
+  getTeamStats,
+  needsAttention,
+  type CommentRef,
+} from "@/server/db/dashboard";
 import { Card, Stat } from "@/components/ui";
 import { BarList, TrendBadge, type BarDatum } from "@/components/charts";
 import { SortableTable, type Column } from "@/components/sortable-table";
+
+/** Build drill-down bars (category or severity) that link to each PR. */
+function toDrilldownBars(
+  rows: { label: string; count: number; items: CommentRef[] }[],
+): BarDatum[] {
+  return rows.map((r) => ({
+    label: r.label,
+    count: r.count,
+    items: r.items.map((it) => ({
+      href: `/dashboard/prs/${it.pullRequestId}`,
+      text: `${it.authorName ?? "?"} · #${it.prNumber} — ${it.message}`,
+    })),
+  }));
+}
 
 const ROSTER_COLUMNS: Column[] = [
   { key: "name", label: "Name", type: "link", hrefKey: "href", subKey: "login" },
@@ -28,15 +48,13 @@ export default async function DashboardHome() {
   ]);
   const attention = needsAttention(overview.juniors);
 
-  // Common-mistake bars drill down to the actual comments, labelled by author.
-  const mistakeBars: BarDatum[] = overview.commonMistakes.map((m) => ({
-    label: m.category,
-    count: m.count,
-    items: m.items.map((it) => ({
-      href: `/dashboard/prs/${it.pullRequestId}`,
-      text: `${it.authorName ?? "?"} · #${it.prNumber} — ${it.message}`,
-    })),
-  }));
+  // Both the mistake and severity bars drill down to the comments behind them.
+  const mistakeBars = toDrilldownBars(
+    overview.commonMistakes.map((m) => ({ label: m.category, count: m.count, items: m.items })),
+  );
+  const severityBars = toDrilldownBars(
+    stats.severityBreakdown.map((s) => ({ label: s.severity, count: s.count, items: s.items })),
+  );
 
   const rosterRows = overview.juniors.map((j) => ({
     name: j.name,
@@ -71,9 +89,19 @@ export default async function DashboardHome() {
           <Card>
             <Stat label="Avg issue density" value={stats.avgDensity ?? "—"} />
           </Card>
-          <Card>
-            <Stat label="Open blockers + majors" value={stats.openHighSeverity} />
-          </Card>
+          {/* Clickable: jumps to the open PRs that carry a blocker/major. */}
+          <a
+            href="/dashboard/prs?attention=open-high"
+            style={{ textDecoration: "none" }}
+            title="View open PRs with blockers or majors"
+          >
+            <Card>
+              <Stat
+                label="Open blocker/major PRs →"
+                value={stats.openHighSeverityPrCount}
+              />
+            </Card>
+          </a>
         </div>
       </div>
 
@@ -82,17 +110,31 @@ export default async function DashboardHome() {
           <p style={{ color: "var(--muted)", fontSize: 13, marginTop: 0 }}>
             Trending worse, or stuck repeating the same mistakes — good 1:1 topics.
           </p>
-          <ul style={{ margin: 0, paddingLeft: 18 }}>
+          {/* Aligned columns so name / trend / repeat-rate are easy to scan. */}
+          <div
+            style={{
+              display: "grid",
+              gridTemplateColumns: "1fr auto auto",
+              columnGap: 24,
+              rowGap: 10,
+              alignItems: "center",
+            }}
+          >
+            <div style={{ color: "var(--muted)", fontSize: 12 }}>Junior</div>
+            <div style={{ color: "var(--muted)", fontSize: 12 }}>Trend</div>
+            <div style={{ color: "var(--muted)", fontSize: 12, textAlign: "right" }}>
+              Repeat rate
+            </div>
             {attention.map((j) => (
-              <li key={j.id} style={{ marginBottom: 4 }}>
-                <a href={`/dashboard/juniors/${j.id}`}>{j.name}</a>{" "}
-                <TrendBadge trend={j.trend} />{" "}
-                <span style={{ color: "var(--muted)", fontSize: 13 }}>
-                  repeat rate {Math.round((j.latestRepeatRate ?? 0) * 100)}%
+              <Fragment key={j.id}>
+                <a href={`/dashboard/juniors/${j.id}`}>{j.name}</a>
+                <TrendBadge trend={j.trend} />
+                <span style={{ textAlign: "right" }}>
+                  {Math.round((j.latestRepeatRate ?? 0) * 100)}%
                 </span>
-              </li>
+              </Fragment>
             ))}
-          </ul>
+          </div>
         </Card>
       )}
 
@@ -109,12 +151,10 @@ export default async function DashboardHome() {
       </Card>
 
       <Card title="Comments by severity">
-        <BarList
-          data={stats.severityCounts.map((s) => ({
-            label: s.severity,
-            count: s.count,
-          }))}
-        />
+        <p style={{ color: "var(--muted)", fontSize: 13, marginTop: 0 }}>
+          Click a severity to see the comments behind it.
+        </p>
+        <BarList data={severityBars} />
       </Card>
 
       <Card title="Most common mistakes across the team">

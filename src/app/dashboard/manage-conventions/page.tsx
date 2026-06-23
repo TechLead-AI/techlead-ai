@@ -4,6 +4,7 @@ import { prisma } from "@/server/db/client";
 import { getConventionTree } from "@/server/db/conventions";
 import { Card } from "@/components/ui";
 import { ConventionEditor } from "@/components/convention-editor";
+import { FolderIcon } from "@/components/icons";
 
 export const dynamic = "force-dynamic";
 
@@ -23,8 +24,23 @@ export default async function ManageConventionsPage() {
     getConventionTree(user.orgId),
   ]);
 
-  const branch = { marginLeft: 20, marginTop: 10, display: "flex", flexDirection: "column", gap: 10 } as const;
-  const folder = { fontWeight: 600, color: "var(--muted)" } as const;
+  // A nested "branch" with a guide line down the left makes the hierarchy read
+  // as a tree rather than three flat lists.
+  const branch = {
+    marginLeft: 9,
+    paddingLeft: 18,
+    borderLeft: "2px solid var(--border)",
+    display: "flex",
+    flexDirection: "column",
+    gap: 10,
+    paddingTop: 10,
+  } as const;
+  const folderRow = {
+    display: "flex",
+    alignItems: "center",
+    gap: 8,
+    fontWeight: 600,
+  } as const;
 
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 24 }}>
@@ -38,22 +54,28 @@ export default async function ManageConventionsPage() {
       </div>
 
       <Card>
-        <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
-          {/* Root: the organization */}
-          <div style={folder}>📁 {org?.name ?? "Organization"}</div>
-          <div style={{ marginLeft: 20 }}>
-            <ConventionEditor
-              label="Organization conventions"
-              scope="org"
-              markdown={tree.org.markdown}
-              version={tree.org.version}
-            />
-          </div>
+        {/* Root: the organization, with everything nested beneath it. */}
+        <div style={folderRow}>
+          <span style={{ color: "var(--accent)", display: "flex" }}>
+            <FolderIcon size={18} />
+          </span>
+          {org?.name ?? "Organization"}
+        </div>
 
-          {/* Teams */}
-          <div style={folder}>📁 Teams</div>
+        <div style={branch}>
+          <ConventionEditor
+            label="Organization conventions"
+            scope="org"
+            markdown={tree.org.markdown}
+            version={tree.org.version}
+          />
+
+          {/* Teams sub-folder */}
+          <div style={{ ...folderRow, color: "var(--muted)" }}>
+            <FolderIcon /> Teams
+          </div>
           {tree.teams.length === 0 ? (
-            <p style={{ marginLeft: 20, color: "var(--muted)" }}>No teams yet.</p>
+            <p style={{ ...branch, color: "var(--muted)" }}>No teams yet.</p>
           ) : (
             <div style={branch}>
               {tree.teams.map((t) => (
@@ -69,10 +91,12 @@ export default async function ManageConventionsPage() {
             </div>
           )}
 
-          {/* Repositories */}
-          <div style={folder}>📁 Repositories</div>
+          {/* Repositories sub-folder */}
+          <div style={{ ...folderRow, color: "var(--muted)" }}>
+            <FolderIcon /> Repositories
+          </div>
           {tree.repos.length === 0 ? (
-            <p style={{ marginLeft: 20, color: "var(--muted)" }}>No repositories yet.</p>
+            <p style={{ ...branch, color: "var(--muted)" }}>No repositories yet.</p>
           ) : (
             <div style={branch}>
               {tree.repos.map((r) => (
