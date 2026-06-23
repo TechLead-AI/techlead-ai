@@ -110,28 +110,25 @@ export default async function DashboardHome() {
           <p style={{ color: "var(--muted)", fontSize: 13, marginTop: 0 }}>
             Trending worse, or stuck repeating the same mistakes — good 1:1 topics.
           </p>
-          {/* Aligned columns so name / trend / repeat-rate are easy to scan. */}
+          {/* Columns hug their content so trend/repeat sit right next to the
+              name rather than stretched across the card. */}
           <div
             style={{
               display: "grid",
-              gridTemplateColumns: "1fr auto auto",
-              columnGap: 24,
+              gridTemplateColumns: "max-content max-content max-content",
+              columnGap: 28,
               rowGap: 10,
               alignItems: "center",
             }}
           >
             <div style={{ color: "var(--muted)", fontSize: 12 }}>Junior</div>
             <div style={{ color: "var(--muted)", fontSize: 12 }}>Trend</div>
-            <div style={{ color: "var(--muted)", fontSize: 12, textAlign: "right" }}>
-              Repeat rate
-            </div>
+            <div style={{ color: "var(--muted)", fontSize: 12 }}>Repeat rate</div>
             {attention.map((j) => (
               <Fragment key={j.id}>
                 <a href={`/dashboard/juniors/${j.id}`}>{j.name}</a>
                 <TrendBadge trend={j.trend} />
-                <span style={{ textAlign: "right" }}>
-                  {Math.round((j.latestRepeatRate ?? 0) * 100)}%
-                </span>
+                <span>{Math.round((j.latestRepeatRate ?? 0) * 100)}%</span>
               </Fragment>
             ))}
           </div>

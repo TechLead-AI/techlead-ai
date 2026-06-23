@@ -164,6 +164,26 @@ export function Histogram({
   const axis = "var(--border)";
   const tickText = { fontSize: 10, fill: "var(--muted)" } as const;
 
+  // Thin labels in busy stretches: within a run of consecutive active days,
+  // label every other day, anchored so the most recent day is always labelled
+  // (so a 5-day run shows the last, third-from-last, and so on). Isolated days
+  // are always labelled.
+  const DAY = 24 * 60 * 60 * 1000;
+  const labelDays = new Set<number>();
+  const active = data.filter((d) => d.count > 0);
+  const runs: DayCount[][] = [];
+  for (const d of active) {
+    const run = runs[runs.length - 1];
+    if (run && d.dateMs - run[run.length - 1].dateMs <= DAY * 1.5) run.push(d);
+    else runs.push([d]);
+  }
+  for (const run of runs) {
+    run.forEach((d, k) => {
+      const fromEnd = run.length - 1 - k;
+      if (fromEnd % 2 === 0) labelDays.add(d.dateMs);
+    });
+  }
+
   return (
     <svg width={width} height={height} role="img" aria-label="PRs per day">
       {/* y axis: 0 and max */}
@@ -196,9 +216,9 @@ export function Histogram({
                   coalesced by the browser and break hydration. */}
               <title>{`${d.label}: ${d.count}`}</title>
             </rect>
-            {/* Label only the days that actually have PRs, rotated so dense
-                spans don't overlap. */}
-            {d.count > 0 && (
+            {/* Label active days, thinned within consecutive runs (see above),
+                rotated so they don't overlap. */}
+            {labelDays.has(d.dateMs) && (
               <text
                 x={cx}
                 y={baseY + 6}

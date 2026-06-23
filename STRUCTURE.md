@@ -30,6 +30,8 @@ Each module is small files with co-located `*.test.ts`.
   package.json  tsconfig.json  next.config.mjs
   vitest.config.ts  vitest.setup.ts
   .claude/launch.json         # preview dev-server config
+  public/
+    logo.png                  # brand mark shown next to the nav wordmark
   prisma/
     schema.prisma             # data model (component 6)
     migrations/               # init + add_review_summary
@@ -40,6 +42,7 @@ Each module is small files with co-located `*.test.ts`.
   src/
     app/
       page.tsx                # home
+      icon.png                # favicon (auto-served by the App Router)
       error.tsx               # route error boundary (App Router requires one)
       not-found.tsx           # 404 boundary (used by notFound())
       global-error.tsx        # root-layout error boundary

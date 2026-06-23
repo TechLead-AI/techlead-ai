@@ -21,7 +21,17 @@ export default async function DashboardLayout({ children }: { children: ReactNod
         }}
       >
         <nav style={{ display: "flex", gap: 16, alignItems: "center" }}>
-          <span style={{ fontWeight: 700, color: "var(--text)" }}>Tech Lead AI</span>
+          <span style={{ display: "flex", alignItems: "center", gap: 8 }}>
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src="/logo.png"
+              alt=""
+              height={24}
+              // Fixed height, auto width keeps the (non-square) logo undistorted.
+              style={{ height: 24, width: "auto", borderRadius: 6, display: "block" }}
+            />
+            <span style={{ fontWeight: 700, color: "var(--text)" }}>Tech Lead AI</span>
+          </span>
           {isManager && <a href="/dashboard">Team</a>}
           {isManager && <a href="/dashboard/prs">All PRs</a>}
           {isManager && <a href="/dashboard/manage-conventions">Conventions</a>}
