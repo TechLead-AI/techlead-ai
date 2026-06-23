@@ -15,6 +15,7 @@
     "db:reset": "prisma migrate reset --force",
     "db:seed": "tsx prisma/seed.ts",
     "onboard": "tsx scripts/onboard-repo.ts",
+    "check:github": "tsx scripts/check-github-app.ts",
     "typecheck": "tsc --noEmit"
   },
   "prisma": {

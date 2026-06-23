@@ -36,6 +36,7 @@ Each module is small files with co-located `*.test.ts`.
     seed.ts                   # realistic demo data via the real pipeline
   scripts/
     onboard-repo.ts           # CLI: register a real repo + juniors (npm run onboard)
+    check-github-app.ts       # CLI: verify App credentials + list installs (npm run check:github)
   src/
     app/
       page.tsx                # home
