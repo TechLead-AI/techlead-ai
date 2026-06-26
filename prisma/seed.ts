@@ -69,7 +69,9 @@ async function main() {
   await prisma.org.deleteMany({});
 
   console.log("Creating org, manager, repo, conventions...");
-  const org = await prisma.org.create({ data: { name: "Colman" } });
+  // Org + repo names match the real GitHub org/repo the live webhook targets,
+  // so seeded demo history and real reviews appear under one coherent identity.
+  const org = await prisma.org.create({ data: { name: "TechLead-AI" } });
 
   await prisma.user.create({
     data: {
@@ -89,7 +91,7 @@ async function main() {
   });
 
   const repo = await prisma.repo.create({
-    data: { orgId: org.id, fullName: "colman/web-app" },
+    data: { orgId: org.id, fullName: "TechLead-AI/pr-review-tests" },
   });
 
   await prisma.conventionDoc.create({
