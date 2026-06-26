@@ -74,6 +74,7 @@ Each module is small files with co-located `*.test.ts`.
       ui.tsx                  # Card, Stat, SeverityBadge, StatusBadge, Tag
     server/
       auth/session.ts         # cookie session (component 8)
+      http/redirect.ts        # host-agnostic relative redirect (proxy-safe; + test)
       conventions/merge.ts    # layered convention merge (component 2)
       grading/metrics.ts      # density / repeat-rate / category mix (component 4)
       stats/pr-stats.ts       # pure PR aggregations: per-author, per-day (+ test)

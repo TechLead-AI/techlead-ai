@@ -1,11 +1,12 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getSessionUser } from "@/server/auth/session";
 import { runManualReview } from "@/server/review/manual";
+import { relativeRedirect } from "@/server/http/redirect";
 
 /** Handle the "Review a PR" form: run a review, then go to the junior's profile. */
 export async function POST(req: NextRequest) {
   const user = await getSessionUser();
-  if (!user) return NextResponse.redirect(new URL("/login", req.url));
+  if (!user) return relativeRedirect("/login");
   if (user.role === "junior") {
     return NextResponse.json({ error: "Managers only" }, { status: 403 });
   }
@@ -31,7 +32,5 @@ export async function POST(req: NextRequest) {
     diff,
   });
 
-  return NextResponse.redirect(
-    new URL(`/dashboard/juniors/${result.authorId}`, req.url),
-  );
+  return relativeRedirect(`/dashboard/juniors/${result.authorId}`);
 }
