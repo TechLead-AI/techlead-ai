@@ -10,8 +10,11 @@
 | `DESIGN.md` | Product & system design — what we're building and why |
 | `MVP.md` | The step-by-step build plan for the demo |
 | `CONNECT_GITHUB.md` | How to connect a real GitHub repo for live PR reviews |
+| `DEPLOY.md` | How to deploy the web app + worker + Postgres to Railway |
 | `CLAUDE.md` | How to write code in this repo |
 | `STRUCTURE.md` | This file — the codebase map |
+| `PRESENTATION.md` | Project presentation (purpose, architecture, flow) with embedded screenshots |
+| `docs/screenshots/` | Dashboard screenshots used by `PRESENTATION.md` (generated) |
 
 ## Stack
 
@@ -39,6 +42,7 @@ Each module is small files with co-located `*.test.ts`.
   scripts/
     onboard-repo.ts           # CLI: register a real repo + juniors (npm run onboard)
     check-github-app.ts       # CLI: verify App credentials + list installs (npm run check:github)
+    shots.mjs                 # one-off: capture dashboard screenshots for PRESENTATION.md (needs puppeteer-core + Chrome)
   src/
     app/
       page.tsx                # home
