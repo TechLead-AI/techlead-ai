@@ -220,12 +220,15 @@ PullRequest, Review (one row per *run*), Comment, CommentFeedback, and the froze
 
 ---
 
-## 4. A real review, end to end (worked example)
+## 4. A real review, two trajectories (worked example)
 
-The whole product becomes obvious by following **one junior, Elyan**, from a single
-messy PR to his growth curve — all captured straight from the running demo.
+The product becomes obvious in two beats: first the **anatomy of one review**, then
+how the same per-PR data rolls into **opposite trajectories** for two real juniors —
+Elyan (improving) and Norm Scully (slipping). All captured from the running demo.
 
-**Elyan's first PR** — a few deliberately bad lines:
+### Beat 1 — anatomy of one review (Elyan's first PR)
+
+A few deliberately bad lines:
 
 ```diff
 +++ b/auth.ts
@@ -249,16 +252,28 @@ Notice what's happening on this one screen:
 - The header shows the frozen metrics for this PR: **density 12.08**, **repeats
   0%** — this is his first PR, so there's no history to repeat yet.
 
-**Now watch it roll up into Elyan's growth.** Those same per-PR snapshots — same
-junior, same data — become his profile. Across four PRs his issue density falls
-from **12.08 → 0** and his repeat-rate drops back to 0: he stopped re-making the
-same mistakes.
+### Beat 2 — the same data over time, two opposite trajectories
 
-![Elyan's profile showing improvement](docs/screenshots/02-junior-profile-elyan.png)
+Those per-PR snapshots aggregate into each junior's profile. The point of tracking
+over time is that the *same engine and the same metrics* surface growth **and**
+regression — and each junior is compared only to their own past (no leaderboard).
 
-> This is the payoff: *one PR's comments* and *the person's trend* are literally
-> the same data, just aggregated over time. Catching the bug is table stakes;
-> showing the growth is the product.
+**Elyan — improving.** Issue density falls **12.08 → 0** and his repeat-rate drops
+back to 0: he stopped re-making the same mistakes.
+
+![Elyan's profile — improving](docs/screenshots/02-junior-profile-elyan.png)
+
+**Norm Scully — slipping.** The mirror image: clean early PRs, then density
+**climbs** and his repeat-rate rises to **100%**. The profile flags him as
+"slipping," and he's exactly who shows up in the manager's **needs-attention** list
+on the team overview.
+
+![Norm Scully's profile — slipping](docs/screenshots/07-junior-profile-norm.png)
+
+> This is the payoff: *one PR's comments* and *the person's trend* are literally the
+> same data, just aggregated over time. Catching the bug is table stakes; showing
+> the trajectory — up **or** down — is the product. And it's real: those reviews are
+> posted on actual GitHub PRs (see §6).
 
 ---
 
@@ -353,9 +368,15 @@ flowchart TB
 > yet; repeat-detection works within a category. All three are architected to slot
 > in later (fix-acknowledgment, a self-check pass, smarter semantic matching).
 
-> **🚧 Asset still needed:** a screenshot of step 9 — the bot's batched review on a
-> *real GitHub PR* (inline comments + summary). It's the product's front door and
-> we don't have it yet; see the [appendix](#appendix--presenting-it-demo-script--asset-checklist).
+**This is live, not a mock.** On the real test repo `TechLead-AI/pr-review-tests`,
+the App (`tech-lead-ai-dev[bot]`) posts exactly this: one batched review titled
+*"Tech Lead AI review — Found 6 thing(s) worth looking at…"* plus inline comments
+(severity · category · message · why · suggestion · convention) on the diff —
+e.g. PR #5, authored by the junior `norm-dev`.
+
+> 🖼️ *Drop the captured GitHub screenshot in at* `docs/screenshots/08-github-pr-review.png`
+> *and replace this line with* `![Live Tech Lead AI review on a real GitHub PR](docs/screenshots/08-github-pr-review.png)`*. The review is already posted live on
+> [PR #5](https://github.com/TechLead-AI/pr-review-tests/pull/5) — it just needs a logged-in capture.*
 
 ---
 
@@ -521,8 +542,10 @@ A safe path that works offline (no API key needed — the `FakeReviewer` runs):
 fail on stage. If a live GitHub repo is wired, swap step 4 for opening a real PR.
 
 ### Assets still needed (placeholders in the deck)
-- **🚧 The bot's batched review on a real GitHub PR** (referenced in §6) — the
-  product's front door; requires running the live GitHub path against a real repo.
+- **🖼️ The bot's batched review on a real GitHub PR** (referenced in §6) —
+  *already live* on [PR #5](https://github.com/TechLead-AI/pr-review-tests/pull/5)
+  (posted by `tech-lead-ai-dev[bot]`); the repo is **private**, so it just needs a
+  logged-in screenshot saved to `docs/screenshots/08-github-pr-review.png`.
 - **Railway services board** (web + worker + Postgres) and the **live public URL**
   loaded in a browser (§7) — proof it's deployed.
 - *Optional polish:* a "before/after" concept image for §1, a stack logo strip for
