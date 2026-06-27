@@ -9,19 +9,10 @@ export default async function DashboardLayout({ children }: { children: ReactNod
   const isManager = user.role === "manager" || user.role === "admin";
 
   return (
-    <div style={{ maxWidth: 980, margin: "0 auto", padding: "24px" }}>
-      <header
-        style={{
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "space-between",
-          paddingBottom: 16,
-          borderBottom: "1px solid var(--border)",
-          marginBottom: 24,
-        }}
-      >
-        <nav style={{ display: "flex", gap: 16, alignItems: "center" }}>
-          <span style={{ display: "flex", alignItems: "center", gap: 8 }}>
+    <div className="dash-shell">
+      <header className="dash-header">
+        <nav className="dash-nav">
+          <span className="dash-brand">
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img
               src="/logo.png"
@@ -35,10 +26,20 @@ export default async function DashboardLayout({ children }: { children: ReactNod
           {isManager && <a href="/dashboard">Team</a>}
           {isManager && <a href="/dashboard/prs">All PRs</a>}
           {isManager && <a href="/dashboard/manage-conventions">Conventions</a>}
-          {isManager && <a href="/dashboard/review">Review a PR</a>}
-          {isManager && <a href="/dashboard/add-junior">Add junior</a>}
+          {/* "Review a PR" and "Add junior" are hidden on phones — they're
+              desk-bound manager actions, not something to trigger on the go. */}
+          {isManager && (
+            <a className="nav-desktop-only" href="/dashboard/review">
+              Review a PR
+            </a>
+          )}
+          {isManager && (
+            <a className="nav-desktop-only" href="/dashboard/add-junior">
+              Add junior
+            </a>
+          )}
         </nav>
-        <div style={{ display: "flex", gap: 12, alignItems: "center" }}>
+        <div className="dash-userbar">
           <span style={{ color: "var(--muted)", fontSize: 13 }}>
             {user.name} · {user.role}
           </span>

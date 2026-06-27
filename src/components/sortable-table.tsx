@@ -135,7 +135,10 @@ export function SortableTable({
         />
       ) : null}
 
-      <table style={{ width: "100%", borderCollapse: "collapse" }}>
+      {/* Tables can be wider than a phone screen, so let them scroll sideways
+          inside their card rather than spilling past it. */}
+      <div className="scroll-x">
+        <table style={{ width: "100%", borderCollapse: "collapse" }}>
         <thead>
           <tr style={{ textAlign: "left", color: "var(--muted)", fontSize: 13 }}>
             {columns.map((c) => {
@@ -190,7 +193,8 @@ export function SortableTable({
             ))
           )}
         </tbody>
-      </table>
+        </table>
+      </div>
     </div>
   );
 }

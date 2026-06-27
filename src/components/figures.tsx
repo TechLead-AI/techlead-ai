@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, type ReactNode } from "react";
+import { useElementWidth } from "./use-element-width";
 import type { CountSlice, DayCount } from "@/server/stats/pr-stats";
 
 /**
@@ -167,14 +168,17 @@ export function Histogram({
   height = FIGURE_HEIGHT,
 }: {
   data: DayCount[];
+  /** Fallback width; the chart grows to fill its container when it can. */
   width?: number;
   height?: number;
 }) {
   const [hover, setHover] = useState<number | null>(null);
+  // Fill the card on wide screens; shrink to fit on a phone.
+  const { ref, width: w } = useElementWidth(width);
 
   if (data.length === 0) return <p style={{ color: "var(--muted)" }}>No data yet.</p>;
 
-  const plotW = width - HMARGIN.left - HMARGIN.right;
+  const plotW = w - HMARGIN.left - HMARGIN.right;
   const plotH = height - HMARGIN.top - HMARGIN.bottom;
   const baseY = HMARGIN.top + plotH;
   const max = Math.max(...data.map((d) => d.count), 1);
@@ -206,8 +210,16 @@ export function Histogram({
   const hoverX = hover != null ? HMARGIN.left + hover * bandW + bandW / 2 : 0;
 
   return (
-    <div style={{ position: "relative", width, height }}>
-      <svg width={width} height={height} role="img" aria-label="PRs per day">
+    <div ref={ref} style={{ position: "relative", width: "100%", height }}>
+      {/* Absolute so the SVG's own width never widens the card: the wrapper
+          width is driven by its container, and `w` is measured from it. */}
+      <svg
+        width={w}
+        height={height}
+        role="img"
+        aria-label="PRs per day"
+        style={{ position: "absolute", top: 0, left: 0 }}
+      >
         {/* y axis: 0 and max */}
         <line x1={HMARGIN.left} y1={HMARGIN.top} x2={HMARGIN.left} y2={baseY} stroke={axis} />
         <text x={HMARGIN.left - 4} y={HMARGIN.top + 4} textAnchor="end" {...tickText}>
@@ -286,7 +298,7 @@ export function Histogram({
         <div
           style={{
             position: "absolute",
-            left: Math.min(Math.max(hoverX, 90), width - 90),
+            left: Math.min(Math.max(hoverX, 90), w - 90),
             top: Math.max(baseY - (hovered.count / max) * plotH - 8, HMARGIN.top),
             transform: "translate(-50%, -100%)",
             background: "var(--panel-2)",

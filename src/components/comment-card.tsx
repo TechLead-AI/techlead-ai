@@ -30,7 +30,9 @@ export function CommentCard({ comment }: { comment: PRCommentDetail }) {
       >
         <SeverityBadge severity={comment.severity} />
         <Tag>{comment.category}</Tag>
-        <code style={{ color: "var(--muted)", fontSize: 12 }}>{location}</code>
+        <code style={{ color: "var(--muted)", fontSize: 12, wordBreak: "break-all" }}>
+          {location}
+        </code>
         <span style={{ flex: 1 }} />
         {comment.repeatOfId && (
           <span style={{ color: "var(--warn)", fontSize: 12 }}>↻ repeat</span>

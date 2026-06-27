@@ -35,3 +35,160 @@ a {
 a:hover {
   text-decoration: underline;
 }
+
+/* ----------------------------------------------------------------------------
+ * Layout helpers
+ *
+ * Components keep their one-off styling inline; the rules below cover the bits
+ * that have to change between desktop and mobile, since inline styles can't hold
+ * media queries. The phone breakpoint is 640px.
+ * ------------------------------------------------------------------------- */
+
+/* The dashboard shell + top bar. */
+.dash-shell {
+  max-width: 980px;
+  margin: 0 auto;
+  padding: 24px;
+}
+
+.dash-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding-bottom: 16px;
+  border-bottom: 1px solid var(--border);
+  margin-bottom: 24px;
+}
+
+.dash-nav {
+  display: flex;
+  gap: 16px;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+/* Keep the "Tech Lead AI" wordmark on a single line. */
+.dash-brand {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  white-space: nowrap;
+}
+
+.dash-userbar {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+}
+
+/* The panel/card used across the dashboards. */
+.card {
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 20px;
+}
+
+.stat-label {
+  color: var(--muted);
+  font-size: 13px;
+}
+
+.stat-value {
+  font-size: 24px;
+  font-weight: 600;
+}
+
+/* A short row of stat cards that always sit side by side. */
+.stat-strip {
+  display: flex;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+
+/* A set of stat cards that wraps freely. */
+.stat-grid {
+  display: flex;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+
+/* Two cards side by side that stack on mobile (e.g. the chart pairs). */
+.two-col {
+  display: flex;
+  gap: 24px;
+  flex-wrap: wrap;
+  align-items: stretch;
+}
+
+.two-col > * {
+  flex: 1;
+  min-width: 280px;
+}
+
+/* Wraps wide content (tables, charts) so it scrolls instead of spilling out of
+   its card on a narrow screen. */
+.scroll-x {
+  overflow-x: auto;
+}
+
+@media (max-width: 640px) {
+  .dash-shell {
+    padding: 16px;
+  }
+
+  /* Stack the nav above the user/sign-out bar instead of crowding one row. */
+  .dash-header {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 12px;
+  }
+
+  .dash-userbar {
+    justify-content: space-between;
+  }
+
+  /* Manager-only actions we don't want triggered from a phone. */
+  .nav-desktop-only {
+    display: none;
+  }
+
+  .card {
+    padding: 14px;
+  }
+
+  .stat-value {
+    font-size: 20px;
+  }
+
+  .stat-label {
+    font-size: 12px;
+  }
+
+  /* Keep the small stat cards on one row, sharing the width evenly. */
+  .stat-strip {
+    display: grid;
+    grid-auto-flow: column;
+    grid-auto-columns: 1fr;
+    gap: 10px;
+  }
+
+  /* Several stat cards read better two-up than crammed into a single row. */
+  .stat-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+  }
+
+  /* Stack the side-by-side cards, and let them shrink to the screen width
+     (the 280px floor is only needed to force a wrap on wider screens). */
+  .two-col {
+    flex-direction: column;
+    gap: 16px;
+  }
+
+  .two-col > * {
+    min-width: 0;
+  }
+}
