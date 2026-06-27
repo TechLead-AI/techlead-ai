@@ -52,6 +52,15 @@ describe("countByDay", () => {
     expect(rows[0].label).toBe("01/06");
   });
 
+  it("carries each day's PRs as drill-down links", () => {
+    const rows = countByDay([pr("A", new Date(2026, 5, 1, 9))]);
+    expect(rows[0].prs).toHaveLength(1);
+    expect(rows[0].prs[0].href).toMatch(/^\/dashboard\/prs\//);
+    expect(rows[0].prs[0].text).toBe("#1 t");
+    // Empty days carry no PRs.
+    expect(rows.find((r) => r.count === 0)?.prs ?? []).toEqual([]);
+  });
+
   it("is empty for no PRs", () => {
     expect(countByDay([])).toEqual([]);
   });

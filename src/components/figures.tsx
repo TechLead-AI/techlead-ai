@@ -143,8 +143,14 @@ function slicePaths(
 }
 
 const HMARGIN = { top: 10, right: 10, bottom: 42, left: 26 };
+// At most this many PR titles in the hover popover; the rest are summarised.
+const POPOVER_LIMIT = 6;
 
-/** A vertical-bar histogram of PRs per day. */
+/**
+ * A vertical-bar histogram of PRs per day. Hovering a day with PRs shows the
+ * list of PRs opened that day; clicking the bar filters the table to that day
+ * (via a `?day=<dateMs>` link the All-PRs page reads).
+ */
 export function Histogram({
   data,
   width = 360,
@@ -154,6 +160,8 @@ export function Histogram({
   width?: number;
   height?: number;
 }) {
+  const [hover, setHover] = useState<number | null>(null);
+
   if (data.length === 0) return <p style={{ color: "var(--muted)" }}>No data yet.</p>;
 
   const plotW = width - HMARGIN.left - HMARGIN.right;
@@ -184,54 +192,127 @@ export function Histogram({
     });
   }
 
+  const hovered = hover != null ? data[hover] : null;
+  const hoverX = hover != null ? HMARGIN.left + hover * bandW + bandW / 2 : 0;
+
   return (
-    <svg width={width} height={height} role="img" aria-label="PRs per day">
-      {/* y axis: 0 and max */}
-      <line x1={HMARGIN.left} y1={HMARGIN.top} x2={HMARGIN.left} y2={baseY} stroke={axis} />
-      <text x={HMARGIN.left - 4} y={HMARGIN.top + 4} textAnchor="end" {...tickText}>
-        {max}
-      </text>
-      <text x={HMARGIN.left - 4} y={baseY} textAnchor="end" {...tickText}>
-        0
-      </text>
+    <div style={{ position: "relative", width, height }}>
+      <svg width={width} height={height} role="img" aria-label="PRs per day">
+        {/* y axis: 0 and max */}
+        <line x1={HMARGIN.left} y1={HMARGIN.top} x2={HMARGIN.left} y2={baseY} stroke={axis} />
+        <text x={HMARGIN.left - 4} y={HMARGIN.top + 4} textAnchor="end" {...tickText}>
+          {max}
+        </text>
+        <text x={HMARGIN.left - 4} y={baseY} textAnchor="end" {...tickText}>
+          0
+        </text>
 
-      {/* x axis baseline */}
-      <line x1={HMARGIN.left} y1={baseY} x2={HMARGIN.left + plotW} y2={baseY} stroke={axis} />
+        {/* x axis baseline */}
+        <line x1={HMARGIN.left} y1={baseY} x2={HMARGIN.left + plotW} y2={baseY} stroke={axis} />
 
-      {data.map((d, i) => {
-        const h = (d.count / max) * plotH;
-        const cx = HMARGIN.left + i * bandW + bandW / 2;
-        const barW = Math.max(bandW * 0.7, 1);
-        return (
-          <g key={d.dateMs}>
-            <rect
-              x={cx - barW / 2}
-              y={baseY - h}
-              width={barW}
-              height={h}
-              fill="var(--accent)"
-              rx={1}
+        {data.map((d, i) => {
+          const h = (d.count / max) * plotH;
+          const cx = HMARGIN.left + i * bandW + bandW / 2;
+          const barW = Math.max(bandW * 0.7, 1);
+          const interactive = d.count > 0;
+          const active = hover === i;
+          const bar = (
+            <g
+              onMouseEnter={interactive ? () => setHover(i) : undefined}
+              onMouseLeave={interactive ? () => setHover(null) : undefined}
+              style={{ cursor: interactive ? "pointer" : "default" }}
             >
-              {/* Single string child: adjacent text nodes in an SVG <title> get
-                  coalesced by the browser and break hydration. */}
-              <title>{`${d.label}: ${d.count}`}</title>
-            </rect>
-            {/* Label active days, thinned within consecutive runs (see above),
-                rotated so they don't overlap. */}
-            {labelDays.has(d.dateMs) && (
-              <text
-                x={cx}
-                y={baseY + 6}
-                textAnchor="end"
-                transform={`rotate(-55 ${cx} ${baseY + 6})`}
-                {...tickText}
+              {/* Full-height invisible hit target so hovering/clicking a short
+                  bar (or its day) is easy. */}
+              <rect
+                x={HMARGIN.left + i * bandW}
+                y={HMARGIN.top}
+                width={bandW}
+                height={plotH}
+                fill="transparent"
+              />
+              <rect
+                x={cx - barW / 2}
+                y={baseY - h}
+                width={barW}
+                height={h}
+                fill="var(--accent)"
+                opacity={hover === null || active ? 1 : 0.55}
+                rx={1}
               >
-                {d.label}
-              </text>
-            )}
-          </g>
-        );
-      })}
-    </svg>
+                {/* Single string child: adjacent text nodes in an SVG <title> get
+                    coalesced by the browser and break hydration. */}
+                <title>{`${d.label}: ${d.count}`}</title>
+              </rect>
+            </g>
+          );
+          return (
+            <g key={d.dateMs}>
+              {/* Clicking a day with PRs filters the table to that day. */}
+              {interactive ? (
+                <a href={`/dashboard/prs?day=${d.dateMs}`}>{bar}</a>
+              ) : (
+                bar
+              )}
+              {/* Label active days, thinned within consecutive runs (see above),
+                  rotated so they don't overlap. */}
+              {labelDays.has(d.dateMs) && (
+                <text
+                  x={cx}
+                  y={baseY + 6}
+                  textAnchor="end"
+                  transform={`rotate(-55 ${cx} ${baseY + 6})`}
+                  {...tickText}
+                >
+                  {d.label}
+                </text>
+              )}
+            </g>
+          );
+        })}
+      </svg>
+
+      {hovered && hovered.prs.length > 0 && (
+        <div
+          style={{
+            position: "absolute",
+            left: Math.min(Math.max(hoverX, 90), width - 90),
+            top: Math.max(baseY - (hovered.count / max) * plotH - 8, HMARGIN.top),
+            transform: "translate(-50%, -100%)",
+            background: "var(--panel-2)",
+            border: "1px solid var(--border)",
+            borderRadius: 6,
+            padding: "6px 10px",
+            fontSize: 12,
+            width: 180,
+            pointerEvents: "none",
+            zIndex: 1,
+          }}
+        >
+          <div style={{ fontWeight: 600, marginBottom: 4 }}>
+            {hovered.label} · {hovered.count} PR{hovered.count === 1 ? "" : "s"}
+          </div>
+          <ul style={{ margin: 0, padding: 0, listStyle: "none" }}>
+            {hovered.prs.slice(0, POPOVER_LIMIT).map((pr) => (
+              <li
+                key={pr.href}
+                style={{
+                  whiteSpace: "nowrap",
+                  overflow: "hidden",
+                  textOverflow: "ellipsis",
+                }}
+              >
+                {pr.text}
+              </li>
+            ))}
+          </ul>
+          {hovered.prs.length > POPOVER_LIMIT && (
+            <div style={{ color: "var(--muted)", marginTop: 2 }}>
+              +{hovered.prs.length - POPOVER_LIMIT} more — click to see all
+            </div>
+          )}
+        </div>
+      )}
+    </div>
   );
 }
