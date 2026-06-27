@@ -50,14 +50,14 @@ if (elyanHref) {
 await page.goto(`${BASE}/dashboard/prs`, { waitUntil: "networkidle0" });
 await shot("03-all-prs");
 
-// 4. PR detail — first row of the all-PRs table.
+// 4. PR detail — Elyan's first (messy) PR, the one the worked example walks through.
 const prHref = await page.$$eval("a", (as) => {
-  const a = as.find((x) => /\/dashboard\/prs\/[^/]+$/.test(x.getAttribute("href") || ""));
+  const a = as.find((x) => /\/dashboard\/prs\/[^/]+$/.test(x.getAttribute("href") || "") && /Elyan feature 1\b/.test(x.textContent || ""));
   return a ? a.getAttribute("href") : null;
 });
 if (prHref) {
   await page.goto(`${BASE}${prHref}`, { waitUntil: "networkidle0" });
-  await shot("04-pr-detail");
+  await shot("04-pr-detail-elyan");
 }
 
 // 5. Manage conventions tree

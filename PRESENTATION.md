@@ -2,9 +2,11 @@
 
 ### An AI senior engineer that mentors junior developers — by reviewing their pull requests, posting feedback on GitHub, and tracking each junior's growth over time.
 
-> **The pitch in one sentence:** every other AI reviewer checks *a PR*. Tech Lead
-> AI mentors *a person* — it remembers past mistakes, frames feedback as growth,
+> **The pitch in one sentence:** most AI reviewers check *a PR*. Tech Lead AI
+> mentors *a person* — it remembers past mistakes, frames feedback as growth,
 > and gives managers a real picture of how each junior is developing.
+
+*Colman Dev Club · project presentation · presenter & date: __________*
 
 ![Team overview dashboard](docs/screenshots/01-team-overview.png)
 
@@ -19,11 +21,11 @@
 5. [The website — what you can do there](#5-the-website--what-you-can-do-there)
 6. [How the review flow works](#6-how-the-review-flow-works)
 7. [Deployment — running it for real on Railway](#7-deployment--running-it-for-real-on-railway)
-8. [What makes it different](#8-what-makes-it-different)
-9. [Extra things worth highlighting](#9-extra-things-worth-highlighting)
-10. [Risks & honest tradeoffs](#10-risks--honest-tradeoffs)
-11. [Roadmap — what's next](#11-roadmap--whats-next)
-12. [Closing & quick facts](#12-closing--quick-facts)
+8. [What makes it different (and other highlights)](#8-what-makes-it-different-and-other-highlights)
+9. [Risks & honest tradeoffs](#9-risks--honest-tradeoffs)
+10. [Roadmap — what's next](#10-roadmap--whats-next)
+11. [Closing & quick facts](#11-closing--quick-facts)
+- [Appendix — presenting it: demo script & asset checklist](#appendix--presenting-it-demo-script--asset-checklist)
 
 ---
 
@@ -53,16 +55,14 @@ teams that rarely happens:
 **Scope:** internal use today, but architected as multi-tenant SaaS from day one
 (`org_id` on every table, org → team → user structure).
 
-📷 *Suggested visuals:*
-- A "before / after" split: a tired senior dev buried in PRs vs. the AI reviewer calmly handling them.
-- A simple problem → solution diagram (the 3 pain points above → the 3 things we do).
-
 ---
 
 ## 2. Architecture
 
-One Next.js app serves everything (dashboard UI, API, GitHub webhook, OAuth), with
-a separate worker process so a flood of reviews never blocks incoming webhooks.
+One Next.js app serves everything (dashboard UI, API, GitHub webhook, and
+login/sessions), with a separate worker process so a flood of reviews never
+blocks incoming webhooks. (Auth today is a demo cookie standing in for GitHub
+OAuth — see §5.)
 
 ```mermaid
 flowchart LR
@@ -116,10 +116,6 @@ erDiagram
 **Stack:** TypeScript + Next.js (App Router), Postgres via Docker Compose, Prisma
 ORM, pg-boss queue, Anthropic SDK, Octokit (GitHub App), Vitest for tests.
 
-📷 *Suggested visuals:*
-- A small logo strip of the stack (Next.js, Postgres, Prisma, Anthropic, GitHub).
-- The "two entry points → one pipeline" idea called out on the flow diagram above.
-
 ---
 
 ## 3. How the main components are built
@@ -134,20 +130,18 @@ it ran*, so old reviews stay coherent after the manager edits conventions.
 → `src/server/conventions/merge.ts`, `src/server/db/conventions.ts`
 
 ### Review Engine — the AI brain (component 3)
-A small, discrete-step pipeline (`src/server/review/pipeline.ts`) so future
-features slot in cleanly:
+A small, discrete-step pipeline (`src/server/review/pipeline.ts`) —
+*gather context → review → gate → detect repeats → grade* — built as separate
+steps so future features (a self-check pass, fix-acknowledgment) slot in cleanly.
+The end-to-end run is walked through in [§6](#6-how-the-review-flow-works); what
+matters here is *how* it's built:
 
-1. **Gather context** — the diff, the merged convention docs, and the junior's
-   recent history of past mistakes.
-2. **Review** — produce structured comments. Convention-grounded: every comment
-   maps to a rule, no hallucinated opinions. The model assigns **severity** + **confidence**.
-3. **Gates** — confidence threshold (~0.7) and a nit budget decide what actually posts.
-4. **Repeat detection** — match new comments against the junior's history.
-5. **Grade** — compute the per-PR metrics.
-
-The reviewer is an **interface** with two implementations — `FakeReviewer`
-(offline) and `AnthropicReviewer` (Claude) — chosen by a `factory` based on env.
-That's why the system is fully testable offline.
+- **Convention-grounded.** Every comment maps to a rule or stated principle — no
+  hallucinated opinions — and the model assigns a **severity** + **confidence**.
+- **Swappable reviewer.** The reviewer is an **interface** with two
+  implementations — `FakeReviewer` (offline) and `AnthropicReviewer` (Claude) —
+  picked by a `factory` from env. That's why the whole pipeline is testable, and
+  demoable, offline.
 
 #### How we actually steer the AI (the cool part)
 
@@ -208,56 +202,63 @@ flowchart TB
   single 0–100 score — **issue density**, **repeat-mistake rate**, **category mix**.
   *Severity describes the code, never the person.*
 
+  The formula is deliberately simple and deterministic
+  (`src/server/grading/metrics.ts`):
+
+  > **issue density** = (Σ severity weights ÷ lines changed) × 100, with weights
+  > **blocker 8 · major 4 · minor 2 · nit 0.5**.
+  > **repeat rate** = share of comments that repeat a past mistake.
+
+  Worked: the PR in §4 has a blocker + major + minor + nit over 120 lines →
+  (8 + 4 + 2 + 0.5) ÷ 120 × 100 = **12.08**. Lower is better, and it's frozen per
+  PR so the trend can't be rewritten when the formula later changes.
+
 ### Data model / storage (component 6)
 Postgres via Prisma. Core entities: Org → Team → User, Repo, ConventionDoc,
 PullRequest, Review (one row per *run*), Comment, CommentFeedback, and the frozen
 **PRMetrics** snapshot (see the ER diagram above).
 
-📷 *Suggested visuals:*
-- The layered conventions tree as it appears in the app (shown in §5).
-- A close-up of the system prompt next to one real JSON comment it produced.
-
 ---
 
 ## 4. A real review, end to end (worked example)
 
-The whole product becomes obvious with one concrete PR. Here is an actual review
-from the running demo — Norm Scully's messy PR — captured straight from the app.
+The whole product becomes obvious by following **one junior, Elyan**, from a single
+messy PR to his growth curve — all captured straight from the running demo.
 
-**The diff under review** (a few deliberately bad lines):
+**Elyan's first PR** — a few deliberately bad lines:
 
 ```diff
-+++ b/another-smelly.ts
++++ b/auth.ts
 +const apiKey = "sk-live-secret123";
 +try { doThing(); } catch (e) {}
 +console.log(value);
 +let data: any = fetchData();
-+// TODO: handle the edge case
 ```
 
-**What the engine produced** — six structured comments, each with a severity,
+**What the engine produced** — four structured comments, each with a severity,
 category, confidence, and the mandatory *why*:
 
-![PR detail page with full review comments](docs/screenshots/04-pr-detail.png)
+![Elyan's first PR with full review comments](docs/screenshots/04-pr-detail-elyan.png)
 
 Notice what's happening on this one screen:
 - A **`blocker`** (hard-coded secret, 92% confidence) sits above a **`major`**
-  (empty catch swallows errors) above **`minor`/`nit`** items — severity describes
-  the *code*.
-- Every comment carries a **`why`** and most carry a concrete **suggestion** and a
-  **convention reference** ("Security", "Language specifics", "Code style").
-- Several are flagged **`repeat`** — the engine recognised these as patterns this
-  junior has hit before. That's the memory.
+  (empty catch swallows errors), then a **`minor`** (`any`) and a **`nit`**
+  (console.log) — severity describes the *code*, not the person.
+- Every comment carries a **`why`** and a concrete **suggestion**, tagged to a
+  **convention reference** ("Security", "Code style", "Language specifics").
+- The header shows the frozen metrics for this PR: **density 12.08**, **repeats
+  0%** — this is his first PR, so there's no history to repeat yet.
 
-**And it rolls up into the person's growth.** The same data feeds the junior's
-profile. Here's Elyan, the "improving" story — issue density falls from **12 → 0**
-and you can read the trajectory at a glance:
+**Now watch it roll up into Elyan's growth.** Those same per-PR snapshots — same
+junior, same data — become his profile. Across four PRs his issue density falls
+from **12.08 → 0** and his repeat-rate drops back to 0: he stopped re-making the
+same mistakes.
 
-![Per-junior profile showing improvement](docs/screenshots/02-junior-profile-elyan.png)
+![Elyan's profile showing improvement](docs/screenshots/02-junior-profile-elyan.png)
 
-> This is the payoff slide: *one PR's comments* and *a person's trend* are the same
-> data, just aggregated. Catching the bug is table stakes; showing the growth is
-> the product.
+> This is the payoff: *one PR's comments* and *the person's trend* are literally
+> the same data, just aggregated over time. Catching the bug is table stakes;
+> showing the growth is the product.
 
 ---
 
@@ -279,10 +280,8 @@ The dashboard is built with the **Next.js App Router**. It's a real,
 | **Manage Conventions** (`/dashboard/manage-conventions`) | A directory-tree editor (org → team → repo); saving writes a new version, never mutates. |
 | **Review a PR** (`/dashboard/review`) | Paste a diff and run a **real review on demand** — the live demo button. |
 
-**The team overview** — the manager's landing page, with the at-a-glance roster
-and the needs-attention list (note Norm trending worse, Raz stuck repeating):
-
-![Team overview](docs/screenshots/01-team-overview.png)
+(The team overview is the hero image at the top of this doc.) Two more views worth
+showing:
 
 **The all-PRs view** — a pie of PRs per junior, a histogram per day, and a
 searchable/sortable table that links into every PR:
@@ -301,9 +300,6 @@ version so past reviews stay coherent:
   each linking to its PR.
 - Reusable client components: interactive `LineChart`, `BarList`, `PieChart`,
   `Histogram`, and a generic sortable/searchable table — each with its own tests.
-
-📷 *Suggested live demo:* a short GIF hovering a trend point, then clicking
-through to a PR — proves the "everything drills down" claim on stage.
 
 ---
 
@@ -357,8 +353,9 @@ flowchart TB
 > yet; repeat-detection works within a category. All three are architected to slot
 > in later (fix-acknowledgment, a self-check pass, smarter semantic matching).
 
-📷 *Suggested visual:* a screenshot of the final batched review as it appears on a
-real GitHub PR (inline comments + summary, posted by the bot).
+> **🚧 Asset still needed:** a screenshot of step 9 — the bot's batched review on a
+> *real GitHub PR* (inline comments + summary). It's the product's front door and
+> we don't have it yet; see the [appendix](#appendix--presenting-it-demo-script--asset-checklist).
 
 ---
 
@@ -381,50 +378,30 @@ flowchart LR
   WK -- "posts review" --> GH
 ```
 
-**What's interesting in how it's built for production:**
+**The headline:** three services from one repo — public **web** (dashboards +
+webhook), private **worker** (reviews + posts back), and managed **Postgres**
+backing both the data and the queue, so it's **still no Redis** even in prod.
+Deploys are hands-off: `postinstall` regenerates the Prisma client and `release`
+(`prisma migrate deploy`) migrates prod before each release — set on the web
+service only, so the two services never race.
 
-- **Three services, one repo, one Postgres.** The **web** service is the only one
-  with a public URL (dashboards + webhook receiver). The **worker** has no public
-  URL — it watches the queue and does the reviewing + posting. Postgres backs
-  *both* the data model and the pg-boss queue, so there's still **no Redis** even
-  in production.
-- **Hands-off deploys via two `package.json` hooks:**
-  - `postinstall: prisma generate` — both services regenerate the Prisma client on
-    every install.
-  - `release: prisma migrate deploy` — runs migrations against prod **before** the
-    new version goes live; idempotent, and set on the **web service only** so two
-    services never race to migrate.
-- **A real dependency-pruning gotcha, fixed.** `tsx`, `dotenv`, and `prisma` were
-  moved from devDependencies into **runtime `dependencies`** — otherwise a
-  production install that prunes dev deps would break the worker process
-  (`tsx`) and the migration step (`prisma`).
-- **Proxy-safe redirects.** Behind Railway's proxy, `req.url` reports the
-  *internal* address the app listens on (`localhost:8080`), so building an
-  absolute redirect URL sends the browser to the wrong place. `relativeRedirect()`
-  (`src/server/http/redirect.ts`) emits a **relative `Location` header with a 303**,
-  which the browser resolves against the public domain — so it works identically
-  locally and behind any proxy. A small file, but exactly the kind of bug that
-  only shows up once you deploy.
-- **smee is local-only.** The smee.io tunnel exists only to forward webhooks to
-  `localhost` during dev. Once the web service has a real `https://…` URL, GitHub
-  calls it directly and you drop the tunnel entirely.
-- **Operable headless worker.** The worker logs a human-readable label per job
-  (`Reviewing PR #123 (org/repo)…`, then `Posted` / `Stored` / `Skipped`), so the
-  no-UI service is still observable from Railway's logs.
-- **Local/prod parity.** The same `db:seed` and `onboard` scripts run against the
-  production database just by pointing `DATABASE_URL` at Railway — no separate
-  tooling.
+*Two production gotchas worth a mention (the engineer-audience slide):*
+- **Dependency prune.** `tsx`/`dotenv`/`prisma` had to move into runtime
+  `dependencies` — a prod install that prunes dev deps would otherwise break the
+  worker and the migration step.
+- **Proxy-safe redirects.** Behind Railway's proxy `req.url` is the *internal*
+  address, so absolute redirects break; `relativeRedirect()`
+  (`src/server/http/redirect.ts`) sends a relative `Location` + 303 that works
+  identically local and in prod.
 
-📷 *Suggested visuals:*
-- A screenshot of the Railway project showing the **web + worker + Postgres**
-  services side by side.
-- The web service's **public dashboard URL** loaded in a browser (proof it's live).
-- The GitHub App's **Recent Deliveries** tab showing a webhook hitting the Railway
-  URL with a `queued` outcome.
+And: **smee is local-only** (in prod GitHub calls the real `https://…` URL
+directly), the headless worker **logs a readable label per job** so it stays
+observable, and the same `db:seed`/`onboard` scripts run against prod just by
+pointing `DATABASE_URL` at Railway.
 
 ---
 
-## 8. What makes it different
+## 8. What makes it different (and other highlights)
 
 There are plenty of AI code reviewers (CodeRabbit, Copilot review, Graphite, etc.).
 They review **a pull request**. Tech Lead AI reviews **a developer**.
@@ -438,15 +415,11 @@ They review **a pull request**. Tech Lead AI reviews **a developer**.
 | Ranks / scores developers | **No leaderboard, ever** — you vs. your own past only |
 
 The wedge is **memory + mentoring**, not "another linter with an LLM." That's the
-one slide a skeptical audience needs.
+one slide a skeptical audience needs. *(Note: some reviewers, e.g. CodeRabbit, now
+advertise limited cross-PR memory — our differentiation is the growth profile and
+the explicit no-leaderboard, mentor-not-gate framing, not memory alone.)*
 
----
-
-## 9. Extra things worth highlighting
-
-- **Mentoring memory is the whole point.** "Progress = issue density ↓ *and*
-  repeat-rate ↓ while task difficulty holds or rises." The product measures a
-  *trajectory*, not a snapshot.
+**Also worth knowing:**
 - **The insight loop.** When a mistake recurs across the *whole team*, the system
   surfaces it as a candidate to add to the conventions doc — the tool improves the
   team's standard, not just individual PRs.
@@ -457,16 +430,15 @@ one slide a skeptical audience needs.
 - **Metrics measure the work, not the show.** Grades are computed over *all*
   comments found — not just the ones that passed the gates and got posted. We never
   flatter the numbers by hiding low-confidence findings.
-- **HR-sensitive by nature.** These are durable performance judgments about named
-  employees, so retention, per-user deletion, and clear ownership are explicit
-  design concerns before any SaaS launch.
-- **Exemplary code on purpose.** It's a mentoring product, so the codebase holds
-  itself to the same bar: small focused files, lots of tests (109 passing), and a
-  living `STRUCTURE.md` map.
+- **Exemplary code, and tested like it.** It's a mentoring product, so the codebase
+  holds itself to the same bar: small focused files, a living `STRUCTURE.md` map,
+  and **109 tests** co-located with the code, covering behaviour (happy path, edge
+  cases, failure modes). The swappable `FakeReviewer` means the entire pipeline is
+  tested without ever calling a model.
 
 ---
 
-## 10. Risks & honest tradeoffs
+## 9. Risks & honest tradeoffs
 
 We hold these consciously rather than pretending they don't exist:
 
@@ -488,7 +460,7 @@ We hold these consciously rather than pretending they don't exist:
 
 ---
 
-## 11. Roadmap — what's next
+## 10. Roadmap — what's next
 
 The MVP is built, verified, **and now deployable to Railway** (§7). The pipeline
 was deliberately staged so these slot in without a rewrite:
@@ -499,13 +471,13 @@ was deliberately staged so these slot in without a rewrite:
   or gets stuck.
 - **Smarter semantic repeat-detection** — recognise "the same mistake" across
   different files/wording, not just within a category.
-- **Pick & tune the production Claude model** and harden the review prompt.
+- **Tune the review prompt** (the default model, `claude-sonnet-4-6`, is set).
 - **The SaaS path** — the multi-tenant foundation (`org_id` everywhere) is already
   in place; add real GitHub OAuth, retention/deletion, and billing.
 
 ---
 
-## 12. Closing & quick facts
+## 11. Closing & quick facts
 
 **Tech Lead AI turns code review from a one-off gate into a mentoring relationship
 that compounds.** Catch the bug, explain the why, remember the pattern, show the
@@ -525,3 +497,38 @@ growth.
 *Built as the MVP described in [DESIGN.md](DESIGN.md) and [MVP.md](MVP.md); deployed
 per [DEPLOY.md](DEPLOY.md). Screenshots in [docs/screenshots/](docs/screenshots) are
 captured from the running demo (regenerate with `scripts/shots.mjs`).*
+
+---
+
+## Appendix — presenting it: demo script & asset checklist
+
+### Live demo script (≈3 minutes)
+A safe path that works offline (no API key needed — the `FakeReviewer` runs):
+
+1. **Sign in as Shir (manager).** Land on the team overview — point at the
+   **needs-attention** list (Norm trending worse, Raz stuck repeating).
+2. **Open Elyan's profile.** Show the density curve falling **12.08 → 0**; this is
+   the "growth, not a snapshot" moment.
+3. **Click a point on the trend** → it opens the PR behind it. Scroll the comments;
+   read one **`why`** out loud — that's the mentoring.
+4. **Go to Review a PR**, paste a short diff with an obvious smell (a hard-coded
+   secret), **Run review** → a real review appears on demand. This is the engine,
+   live.
+5. **(Optional) Manage Conventions** — show the org → team → repo tree and that
+   saving writes a new version.
+
+*Fallback:* everything above runs on seeded data with no network, so the demo can't
+fail on stage. If a live GitHub repo is wired, swap step 4 for opening a real PR.
+
+### Assets still needed (placeholders in the deck)
+- **🚧 The bot's batched review on a real GitHub PR** (referenced in §6) — the
+  product's front door; requires running the live GitHub path against a real repo.
+- **Railway services board** (web + worker + Postgres) and the **live public URL**
+  loaded in a browser (§7) — proof it's deployed.
+- *Optional polish:* a "before/after" concept image for §1, a stack logo strip for
+  §2, and a short GIF of the trend-point drill-down for §5.
+
+### Known rendering note
+The Mermaid diagrams (§2, §3, §6, §7) render on GitHub and most markdown viewers,
+but not in a plain editor preview without a Mermaid plugin. When this becomes a real
+slide deck, export them to SVG/PNG.
