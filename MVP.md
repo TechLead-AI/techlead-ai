@@ -2,13 +2,13 @@
 
 > The order we build Tech Lead AI in, so each step is shippable and testable on
 > its own. Goal: a local demo. Check off steps as they land and keep this honest.
-> Last updated: 2026-06-23
+> Last updated: 2026-06-27
 >
-> **Status: all six steps built and verified.** 55 tests pass, the app builds and
+> **Status: all six steps built and verified.** 109 tests pass, the app builds and
 > typechecks, the queue+worker path and dashboards are confirmed end to end. The
-> live GitHub path (Step 6) is wired and unit-tested with mocked Octokit; it
-> needs real GitHub App credentials to exercise against github.com. See
-> [README.md](README.md) to run it.
+> live GitHub path (Step 6) is wired and unit-tested with mocked Octokit; the
+> GitHub App is connected (App 4126235) and the app deploys to Railway (see
+> [DEPLOY.md](DEPLOY.md)). See [README.md](README.md) to run it.
 
 ## The idea
 

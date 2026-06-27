@@ -1,7 +1,7 @@
 # Tech Lead AI — Design
 
 > Living design document. Update this whenever a decision changes.
-> Last updated: 2026-06-23 (interactive dashboards + PR detail page)
+> Last updated: 2026-06-27 (Railway deployment)
 
 ## What it is
 
@@ -201,19 +201,21 @@ Keep v1 tiny:
 
 ## Tech stack & architecture
 
-**Priority: a local demo that runs on a laptop.** No cloud deployment for now;
-the architecture stays deployment-agnostic for later.
+**Runs both ways.** It started as a local demo that runs on a laptop
+(`docker compose up` + `npm run dev`), and it now also **deploys to the public
+internet on Railway** as a web service + a worker service + managed Postgres
+(see [DEPLOY.md](DEPLOY.md)). The architecture stays deployment-agnostic.
 
 **Stack:**
 - **TypeScript + Next.js (App Router)** — one app serves the dashboard UI, the
   API, the GitHub webhook endpoint, and GitHub OAuth.
 - **Postgres via Docker Compose** — `docker-compose up` and the DB is local.
 - **Prisma** — ORM, typed models, migrations. Chosen for readability (rule #1).
-- **pg-boss** — job queue that runs on the existing Postgres (no Redis). The
-  review worker runs as a separate local process so a flood of reviews never
-  blocks incoming webhooks.
-- **Anthropic SDK** — the review engine (exact Claude model TBD; likely Sonnet
-  for cost/speed on reviews).
+- **pg-boss** — job queue that runs on the existing Postgres (no Redis, in local
+  dev and in production). The review worker runs as a separate process so a flood
+  of reviews never blocks incoming webhooks.
+- **Anthropic SDK** — the review engine. Default model is `claude-sonnet-4-6`
+  (set via `REVIEW_MODEL`), chosen for cost/speed on reviews.
 - **Octokit + GitHub App** — ingestion and posting.
 - **Vitest** — tests (rule: lots of tests per component).
 
@@ -253,12 +255,14 @@ webhook and manual-trigger paths to share the same review pipeline.
   not entered by hand.
 - **Offline reviewer:** with no `ANTHROPIC_API_KEY`, a `FakeReviewer` scans the
   diff for common smells; with a key, the Claude-backed reviewer is used.
-- **Status:** all six MVP steps built; 55 tests pass; app builds & typechecks.
-  See [MVP.md](MVP.md) and [README.md](README.md).
+- **Status:** all six MVP steps built; 109 tests pass; app builds & typechecks;
+  deploys to Railway. See [MVP.md](MVP.md), [README.md](README.md), and
+  [DEPLOY.md](DEPLOY.md).
 
 ## Open / next
 
-- Exercise the live GitHub path against a real repo (needs App credentials).
+- Run AI-backed reviews end-to-end on live PRs at scale (the GitHub App is wired —
+  App 4126235 — and the app now deploys to Railway via [DEPLOY.md](DEPLOY.md)).
 - Deferred features: engine self-check pass, fix-acknowledgment on re-review,
   notifications (digest + alerts), smarter semantic repeat-detection.
-- Pick the production Claude model and tune the review prompt.
+- Tune the review prompt (the default model, `claude-sonnet-4-6`, is set).

@@ -461,7 +461,7 @@ one slide a skeptical audience needs.
   employees, so retention, per-user deletion, and clear ownership are explicit
   design concerns before any SaaS launch.
 - **Exemplary code on purpose.** It's a mentoring product, so the codebase holds
-  itself to the same bar: small focused files, lots of tests (55+ passing), and a
+  itself to the same bar: small focused files, lots of tests (109 passing), and a
   living `STRUCTURE.md` map.
 
 ---
@@ -514,7 +514,7 @@ growth.
 **Quick facts for Q&A:**
 - **Stack:** TypeScript, Next.js (App Router), Postgres (Docker locally / managed
   on Railway), Prisma, pg-boss, Anthropic SDK, Octokit (GitHub App), Vitest.
-- **Status:** MVP built — 55+ tests pass, app builds & typechecks; live GitHub path
+- **Status:** MVP built — 109 tests pass, app builds & typechecks; live GitHub path
   wired (GitHub App `4126235`); **deploys to Railway as web + worker + Postgres**.
 - **Runs offline:** no API key → `FakeReviewer`; add a key → Claude. The demo can't
   fail on stage.
