@@ -2,6 +2,7 @@
 
 import { useMemo, useState, type CSSProperties } from "react";
 import { TrendBadge } from "./charts";
+import { NewDot } from "./new-dot";
 import { StatusBadge } from "./ui";
 import { formatDate } from "@/lib/format";
 import type { TrendDirection } from "@/server/db/dashboard";
@@ -37,6 +38,11 @@ export interface Column {
    * (`key` itself holds the high-severity count, which drives the sort).
    */
   subKey?: string;
+  /**
+   * For type "link": the row field holding an epoch-ms timestamp. When the
+   * value is within the last hour a "new" dot is shown before the link.
+   */
+  newSinceKey?: string;
 }
 
 export type Row = Record<string, unknown>;
@@ -227,8 +233,10 @@ function Cell({ column, row }: { column: Column; row: Row }) {
     case "link": {
       const href = column.hrefKey ? String(row[column.hrefKey] ?? "") : "";
       const sub = column.subKey ? row[column.subKey] : null;
+      const since = column.newSinceKey ? row[column.newSinceKey] : null;
       return (
         <>
+          {since != null && <NewDot since={Number(since)} />}
           <a href={href}>{String(value ?? "")}</a>
           {sub ? <span style={{ ...muted, marginLeft: 6 }}>{String(sub)}</span> : null}
         </>

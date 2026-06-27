@@ -70,6 +70,7 @@ Each module is small files with co-located `*.test.ts`.
       charts.tsx              # interactive LineChart (axes), BarList, TrendBadge (client; + test)
       figures.tsx             # interactive PieChart + Histogram SVGs (client; + test)
       sortable-table.tsx      # generic sortable/searchable table (client; + test)
+      new-dot.tsx             # "new" dot for items added in the last hour (client; + test)
       comment-card.tsx        # renders one review comment with all Layer 1 data
       convention-editor.tsx   # one editable convention layer (collapsible form)
       icons.tsx               # inline SVG glyphs (folder, document) for the tree

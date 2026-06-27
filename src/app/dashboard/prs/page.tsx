@@ -8,7 +8,8 @@ import { SortableTable, type Column } from "@/components/sortable-table";
 
 const PR_COLUMNS: Column[] = [
   { key: "number", label: "PR #", type: "number" },
-  { key: "title", label: "Title", type: "link", hrefKey: "href" },
+  // A "new" dot appears next to PRs opened within the last hour.
+  { key: "title", label: "Title", type: "link", hrefKey: "href", newSinceKey: "createdAt" },
   { key: "author", label: "Junior", type: "link", hrefKey: "authorHref" },
   { key: "repo", label: "Repo", type: "text" },
   { key: "status", label: "Status", type: "status" },
