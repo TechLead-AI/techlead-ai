@@ -88,4 +88,31 @@ describe("getLatestReviewNotice", () => {
 
     expect(await getLatestReviewNotice(b.org.id)).toBeNull();
   });
+
+  it("ignores reviews older than an hour", async () => {
+    const { org, junior, repo } = await setup("stale");
+    const pr = await reviewedPR(org, junior, repo, 1, "Reviewed a while ago");
+    // Backdate the review past the one-hour window.
+    await prisma.review.updateMany({
+      where: { pullRequestId: pr.id },
+      data: { createdAt: new Date(Date.now() - 2 * 60 * 60 * 1000) },
+    });
+
+    expect(await getLatestReviewNotice(org.id)).toBeNull();
+  });
+
+  it("returns a recent review even when an older one is the same PR's latest", async () => {
+    const { org, junior, repo } = await setup("mixed");
+    const oldPr = await reviewedPR(org, junior, repo, 1, "Old PR");
+    await prisma.review.updateMany({
+      where: { pullRequestId: oldPr.id },
+      data: { createdAt: new Date(Date.now() - 3 * 60 * 60 * 1000) },
+    });
+    const freshPr = await reviewedPR(org, junior, repo, 2, "Fresh PR");
+
+    const notice = await getLatestReviewNotice(org.id);
+    expect(notice).not.toBeNull();
+    expect(notice!.pullRequestId).toBe(freshPr.id);
+    expect(notice!.prTitle).toBe("Fresh PR");
+  });
 });
