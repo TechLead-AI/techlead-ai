@@ -5,6 +5,7 @@ import { countByAuthor, countByDay, startOfDayMs } from "@/server/stats/pr-stats
 import { Card } from "@/components/ui";
 import { PieChart, Histogram } from "@/components/figures";
 import { SortableTable, type Column } from "@/components/sortable-table";
+import { formatDate } from "@/lib/format";
 
 const PR_COLUMNS: Column[] = [
   { key: "number", label: "PR #", type: "number" },
@@ -73,6 +74,9 @@ export default async function AllPullRequestsPage({
     highSeverityCount: pr.highSeverityCount,
     commentCount: pr.commentCount,
     createdAt: pr.createdAt.getTime(),
+    // Hidden, searchable copy of the date exactly as the column displays it,
+    // so typing e.g. "27/06" matches "27/06/2026".
+    openedText: formatDate(pr.createdAt),
   }));
 
   return (
@@ -122,8 +126,8 @@ export default async function AllPullRequestsPage({
           rows={rows}
           initialSortKey="createdAt"
           initialSortDir="desc"
-          searchKeys={["title", "author", "repo"]}
-          searchPlaceholder="Search by PR title, junior, or repo…"
+          searchKeys={["title", "author", "repo", "openedText"]}
+          searchPlaceholder="Search by PR title, junior, repo, or date…"
           emptyMessage="No pull requests yet."
         />
       </Card>

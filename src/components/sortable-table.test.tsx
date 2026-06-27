@@ -101,4 +101,21 @@ describe("SortableTable", () => {
     fireEvent.change(screen.getByRole("textbox"), { target: { value: "ely" } });
     expect(bodyNames()).toEqual(["Elyan"]);
   });
+
+  it("matches a date substring via a searchable text field", () => {
+    const dated = [
+      { name: "Raz", href: "/j/raz", login: "@raz", reviews: 4, opened: "27/06/2026" },
+      { name: "Adi", href: "/j/adi", login: "@adi", reviews: 1, opened: "25/06/2026" },
+    ];
+    render(
+      <SortableTable
+        columns={columns}
+        rows={dated}
+        initialSortKey="name"
+        searchKeys={["name", "opened"]}
+      />,
+    );
+    fireEvent.change(screen.getByRole("textbox"), { target: { value: "27/06" } });
+    expect(bodyNames()).toEqual(["Raz"]);
+  });
 });
