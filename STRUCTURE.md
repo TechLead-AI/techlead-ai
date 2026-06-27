@@ -59,9 +59,11 @@ Each module is small files with co-located `*.test.ts`.
         prs/[id]/page.tsx     # PR detail: header + review summary + all comments
         manage-conventions/page.tsx # convention tree editor (org/team/repo)
         review/page.tsx       # manual "review a PR" form (Step 5)
+        add-junior/page.tsx   # manager/admin: add a mentored junior by hand
       api/
         auth/login, auth/logout   # demo session cookie
         review/manual             # manual trigger endpoint
+        juniors                   # add a mentored junior (manager/admin only)
         conventions               # save a convention layer (new version)
         github/webhook            # GitHub webhook receiver (Step 6)
     components/
@@ -96,6 +98,9 @@ Each module is small files with co-located `*.test.ts`.
       onboarding/
         onboard.ts            # register a real repo + mentored juniors (+ test)
         store.ts              # Prisma adapter for the onboarding orchestration
+      juniors/
+        add-junior.ts         # validate + create one mentored junior (+ test)
+        store.ts              # Prisma adapter for adding a junior
       queue/
         jobs.ts               # job data + shared handler (logs progress; + test)
         queue.ts              # pg-boss setup, enqueue, worker registration
