@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getSessionUser } from "@/server/auth/session";
 import { saveConvention } from "@/server/db/conventions";
+import { relativeRedirect } from "@/server/http/redirect";
 import type { ConventionScope } from "@/server/conventions/merge";
 
 const SCOPES = ["org", "team", "repo"] as const;
@@ -8,7 +9,7 @@ const SCOPES = ["org", "team", "repo"] as const;
 /** Save a convention layer (creates a new version), then return to the editor. */
 export async function POST(req: NextRequest) {
   const user = await getSessionUser();
-  if (!user) return NextResponse.redirect(new URL("/login", req.url));
+  if (!user) return relativeRedirect("/login");
   // Editing conventions is a manager/admin action.
   if (user.role === "junior") {
     return NextResponse.json({ error: "Managers only" }, { status: 403 });
@@ -26,8 +27,5 @@ export async function POST(req: NextRequest) {
 
   await saveConvention({ orgId: user.orgId, scope, teamId, repoId, markdown });
 
-  return NextResponse.redirect(
-    new URL("/dashboard/manage-conventions", req.url),
-    303,
-  );
+  return relativeRedirect("/dashboard/manage-conventions");
 }

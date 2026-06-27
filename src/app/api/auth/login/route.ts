@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { setSession } from "@/server/auth/session";
+import { relativeRedirect } from "@/server/http/redirect";
 
 /** Demo login: pick a user id, set the session cookie, go to the dashboard. */
 export async function POST(req: NextRequest) {
@@ -9,5 +10,5 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "userId required" }, { status: 400 });
   }
   await setSession(userId);
-  return NextResponse.redirect(new URL("/dashboard", req.url));
+  return relativeRedirect("/dashboard");
 }
