@@ -51,14 +51,14 @@ a:hover {
   padding: 24px;
 }
 
-.dash-header {
+/* The header is two stacked rows: a top row (brand + user/sign-out) and a row
+   of page links beneath it, with the separation line under the links. */
+.dash-topbar {
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: 16px;
-  padding-bottom: 16px;
-  border-bottom: 1px solid var(--border);
-  margin-bottom: 24px;
+  padding-bottom: 12px;
 }
 
 .dash-nav {
@@ -66,6 +66,9 @@ a:hover {
   gap: 16px;
   align-items: center;
   flex-wrap: wrap;
+  padding-bottom: 16px;
+  border-bottom: 1px solid var(--border);
+  margin-bottom: 24px;
 }
 
 /* Keep the "Tech Lead AI" wordmark on a single line. */
@@ -138,15 +141,25 @@ a:hover {
     padding: 16px;
   }
 
-  /* Stack the nav above the user/sign-out bar instead of crowding one row. */
-  .dash-header {
-    flex-direction: column;
-    align-items: stretch;
-    gap: 12px;
+  /* Pin the brand + user/sign-out row to the top while scrolling, with the
+     separation line attached so it stays visible too. Negative side margins let
+     the background and line span the full screen width while the content stays
+     aligned with the page. */
+  .dash-topbar {
+    position: sticky;
+    top: 0;
+    z-index: 10;
+    background: var(--bg);
+    margin: 0 -16px 16px;
+    padding: 12px 16px;
+    border-bottom: 1px solid var(--border);
   }
 
-  .dash-userbar {
-    justify-content: space-between;
+  /* The separation line lives on the pinned top row now, not under the links. */
+  .dash-nav {
+    padding-bottom: 0;
+    border-bottom: none;
+    margin-bottom: 24px;
   }
 
   /* Manager-only actions we don't want triggered from a phone. */

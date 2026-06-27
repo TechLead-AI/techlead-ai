@@ -97,7 +97,7 @@ export default async function DashboardHome() {
           >
             <Card>
               <Stat
-                label="Open blocker/major PRs →"
+                label="Open blocker/major PRs"
                 value={stats.openHighSeverityPrCount}
               />
             </Card>

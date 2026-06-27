@@ -10,35 +10,21 @@ export default async function DashboardLayout({ children }: { children: ReactNod
 
   return (
     <div className="dash-shell">
-      <header className="dash-header">
-        <nav className="dash-nav">
-          <span className="dash-brand">
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img
-              src="/logo.png"
-              alt=""
-              height={24}
-              // Fixed height, auto width keeps the (non-square) logo undistorted.
-              style={{ height: 24, width: "auto", borderRadius: 6, display: "block" }}
-            />
-            <span style={{ fontWeight: 700, color: "var(--text)" }}>Tech Lead AI</span>
-          </span>
-          {isManager && <a href="/dashboard">Team</a>}
-          {isManager && <a href="/dashboard/prs">All PRs</a>}
-          {isManager && <a href="/dashboard/manage-conventions">Conventions</a>}
-          {/* "Review a PR" and "Add junior" are hidden on phones — they're
-              desk-bound manager actions, not something to trigger on the go. */}
-          {isManager && (
-            <a className="nav-desktop-only" href="/dashboard/review">
-              Review a PR
-            </a>
-          )}
-          {isManager && (
-            <a className="nav-desktop-only" href="/dashboard/add-junior">
-              Add junior
-            </a>
-          )}
-        </nav>
+      {/* Top row: brand on the left, user + sign-out on the right. A direct
+          child of the shell so it can stay pinned across the whole page while
+          scrolling on mobile (see globals.css). */}
+      <header className="dash-topbar">
+        <span className="dash-brand">
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
+            src="/logo.png"
+            alt=""
+            height={24}
+            // Fixed height, auto width keeps the (non-square) logo undistorted.
+            style={{ height: 24, width: "auto", borderRadius: 6, display: "block" }}
+          />
+          <span style={{ fontWeight: 700, color: "var(--text)" }}>Tech Lead AI</span>
+        </span>
         <div className="dash-userbar">
           <span style={{ color: "var(--muted)", fontSize: 13 }}>
             {user.name} · {user.role}
@@ -60,6 +46,25 @@ export default async function DashboardLayout({ children }: { children: ReactNod
           </form>
         </div>
       </header>
+
+      {/* Second row: the page links. */}
+      <nav className="dash-nav">
+        {isManager && <a href="/dashboard">Team</a>}
+        {isManager && <a href="/dashboard/prs">All PRs</a>}
+        {isManager && <a href="/dashboard/manage-conventions">Conventions</a>}
+        {/* "Review a PR" and "Add junior" are hidden on phones — they're
+            desk-bound manager actions, not something to trigger on the go. */}
+        {isManager && (
+          <a className="nav-desktop-only" href="/dashboard/review">
+            Review a PR
+          </a>
+        )}
+        {isManager && (
+          <a className="nav-desktop-only" href="/dashboard/add-junior">
+            Add junior
+          </a>
+        )}
+      </nav>
       {children}
     </div>
   );
