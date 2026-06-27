@@ -18,11 +18,12 @@
 4. [A real review, end to end (worked example)](#4-a-real-review-end-to-end-worked-example)
 5. [The website — what you can do there](#5-the-website--what-you-can-do-there)
 6. [How the review flow works](#6-how-the-review-flow-works)
-7. [What makes it different](#7-what-makes-it-different)
-8. [Extra things worth highlighting](#8-extra-things-worth-highlighting)
-9. [Risks & honest tradeoffs](#9-risks--honest-tradeoffs)
-10. [Roadmap — what's next](#10-roadmap--whats-next)
-11. [Closing & quick facts](#11-closing--quick-facts)
+7. [Deployment — running it for real on Railway](#7-deployment--running-it-for-real-on-railway)
+8. [What makes it different](#8-what-makes-it-different)
+9. [Extra things worth highlighting](#9-extra-things-worth-highlighting)
+10. [Risks & honest tradeoffs](#10-risks--honest-tradeoffs)
+11. [Roadmap — what's next](#11-roadmap--whats-next)
+12. [Closing & quick facts](#12-closing--quick-facts)
 
 ---
 
@@ -361,7 +362,69 @@ real GitHub PR (inline comments + summary, posted by the bot).
 
 ---
 
-## 7. What makes it different
+## 7. Deployment — running it for real on Railway
+
+The project started as a laptop-only demo. It now deploys to the public internet
+on [Railway](https://railway.app) as **three services that share one database** —
+see [DEPLOY.md](DEPLOY.md) for the full runbook.
+
+```mermaid
+flowchart LR
+  GH["GitHub PR event"] -- "https webhook" --> WEB
+  subgraph RW["Railway project"]
+    WEB["web service (npm start)<br/>dashboards + login + /api/github/webhook<br/><b>only public URL</b>"]
+    WK["worker service (npm run worker)<br/>runs the review pipeline<br/>posts the review back<br/><b>no public URL</b>"]
+    PG[("Postgres plugin<br/>data + pg-boss queue")]
+  end
+  WEB -- enqueue --> PG
+  PG -- dequeue --> WK
+  WK -- "posts review" --> GH
+```
+
+**What's interesting in how it's built for production:**
+
+- **Three services, one repo, one Postgres.** The **web** service is the only one
+  with a public URL (dashboards + webhook receiver). The **worker** has no public
+  URL — it watches the queue and does the reviewing + posting. Postgres backs
+  *both* the data model and the pg-boss queue, so there's still **no Redis** even
+  in production.
+- **Hands-off deploys via two `package.json` hooks:**
+  - `postinstall: prisma generate` — both services regenerate the Prisma client on
+    every install.
+  - `release: prisma migrate deploy` — runs migrations against prod **before** the
+    new version goes live; idempotent, and set on the **web service only** so two
+    services never race to migrate.
+- **A real dependency-pruning gotcha, fixed.** `tsx`, `dotenv`, and `prisma` were
+  moved from devDependencies into **runtime `dependencies`** — otherwise a
+  production install that prunes dev deps would break the worker process
+  (`tsx`) and the migration step (`prisma`).
+- **Proxy-safe redirects.** Behind Railway's proxy, `req.url` reports the
+  *internal* address the app listens on (`localhost:8080`), so building an
+  absolute redirect URL sends the browser to the wrong place. `relativeRedirect()`
+  (`src/server/http/redirect.ts`) emits a **relative `Location` header with a 303**,
+  which the browser resolves against the public domain — so it works identically
+  locally and behind any proxy. A small file, but exactly the kind of bug that
+  only shows up once you deploy.
+- **smee is local-only.** The smee.io tunnel exists only to forward webhooks to
+  `localhost` during dev. Once the web service has a real `https://…` URL, GitHub
+  calls it directly and you drop the tunnel entirely.
+- **Operable headless worker.** The worker logs a human-readable label per job
+  (`Reviewing PR #123 (org/repo)…`, then `Posted` / `Stored` / `Skipped`), so the
+  no-UI service is still observable from Railway's logs.
+- **Local/prod parity.** The same `db:seed` and `onboard` scripts run against the
+  production database just by pointing `DATABASE_URL` at Railway — no separate
+  tooling.
+
+📷 *Suggested visuals:*
+- A screenshot of the Railway project showing the **web + worker + Postgres**
+  services side by side.
+- The web service's **public dashboard URL** loaded in a browser (proof it's live).
+- The GitHub App's **Recent Deliveries** tab showing a webhook hitting the Railway
+  URL with a `queued` outcome.
+
+---
+
+## 8. What makes it different
 
 There are plenty of AI code reviewers (CodeRabbit, Copilot review, Graphite, etc.).
 They review **a pull request**. Tech Lead AI reviews **a developer**.
@@ -379,7 +442,7 @@ one slide a skeptical audience needs.
 
 ---
 
-## 8. Extra things worth highlighting
+## 9. Extra things worth highlighting
 
 - **Mentoring memory is the whole point.** "Progress = issue density ↓ *and*
   repeat-rate ↓ while task difficulty holds or rises." The product measures a
@@ -403,7 +466,7 @@ one slide a skeptical audience needs.
 
 ---
 
-## 9. Risks & honest tradeoffs
+## 10. Risks & honest tradeoffs
 
 We hold these consciously rather than pretending they don't exist:
 
@@ -425,10 +488,10 @@ We hold these consciously rather than pretending they don't exist:
 
 ---
 
-## 10. Roadmap — what's next
+## 11. Roadmap — what's next
 
-The MVP is built and verified. The pipeline was deliberately staged so these slot
-in without a rewrite:
+The MVP is built, verified, **and now deployable to Railway** (§7). The pipeline
+was deliberately staged so these slot in without a rewrite:
 
 - **Self-check pass** in the engine — the biggest quality lever once auto-posting.
 - **Fix-acknowledgment on re-review** — "✅ you fixed this" instead of silence.
@@ -442,23 +505,23 @@ in without a rewrite:
 
 ---
 
-## 11. Closing & quick facts
+## 12. Closing & quick facts
 
 **Tech Lead AI turns code review from a one-off gate into a mentoring relationship
 that compounds.** Catch the bug, explain the why, remember the pattern, show the
 growth.
 
 **Quick facts for Q&A:**
-- **Stack:** TypeScript, Next.js (App Router), Postgres (Docker), Prisma, pg-boss,
-  Anthropic SDK, Octokit (GitHub App), Vitest.
+- **Stack:** TypeScript, Next.js (App Router), Postgres (Docker locally / managed
+  on Railway), Prisma, pg-boss, Anthropic SDK, Octokit (GitHub App), Vitest.
 - **Status:** MVP built — 55+ tests pass, app builds & typechecks; live GitHub path
-  wired (GitHub App `4126235`).
+  wired (GitHub App `4126235`); **deploys to Railway as web + worker + Postgres**.
 - **Runs offline:** no API key → `FakeReviewer`; add a key → Claude. The demo can't
   fail on stage.
 - **Reviewed users:** only manager-designated juniors (controls cost, keeps it
   purposeful).
 - **Safety nets under automation:** confidence threshold + nit budget + the 👎 signal.
 
-*Built as the MVP described in [DESIGN.md](DESIGN.md) and [MVP.md](MVP.md).
-Screenshots in [docs/screenshots/](docs/screenshots) are captured from the running
-demo (regenerate with `scripts/shots.mjs`).*
+*Built as the MVP described in [DESIGN.md](DESIGN.md) and [MVP.md](MVP.md); deployed
+per [DEPLOY.md](DEPLOY.md). Screenshots in [docs/screenshots/](docs/screenshots) are
+captured from the running demo (regenerate with `scripts/shots.mjs`).*
