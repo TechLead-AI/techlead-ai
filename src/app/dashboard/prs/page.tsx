@@ -22,31 +22,42 @@ const PR_COLUMNS: Column[] = [
 export default async function AllPullRequestsPage({
   searchParams,
 }: {
-  searchParams: Promise<{ attention?: string; day?: string }>;
+  searchParams: Promise<{ attention?: string; day?: string; author?: string }>;
 }) {
   const user = await getSessionUser();
   if (!user) redirect("/login");
   // The all-PRs view is a manager/admin tool; juniors see only their own work.
   if (user.role === "junior") redirect(`/dashboard/juniors/${user.id}`);
 
-  const { attention, day } = await searchParams;
+  const { attention, day, author } = await searchParams;
   // "attention" = open PRs carrying a blocker or major — the ones that need eyes.
   const filtering = attention === "open-high";
   // "day" = a local-midnight timestamp from clicking a "PRs per day" bar.
   const dayMs = day != null && day !== "" ? Number(day) : null;
   const dayFiltering = dayMs != null && Number.isFinite(dayMs);
+  // "author" = a junior id from clicking a "PRs per junior" slice.
+  const authorId = author != null && author !== "" ? author : null;
+  const authorFiltering = authorId != null;
 
   const all = await getAllPullRequests(user.orgId);
   let prs = all;
   if (filtering) prs = prs.filter((pr) => pr.status === "open" && pr.highSeverityCount > 0);
   if (dayFiltering) prs = prs.filter((pr) => startOfDayMs(pr.createdAt) === dayMs);
+  if (authorFiltering) prs = prs.filter((pr) => pr.authorId === authorId);
 
-  // Charts always reflect the full set, not the filtered table.
-  const byAuthor = countByAuthor(all);
+  // Charts always reflect the full set, not the filtered table. Each slice
+  // links to its junior's filtered view.
+  const byAuthor = countByAuthor(all).map((s) => ({
+    ...s,
+    href: s.id ? `/dashboard/prs?author=${s.id}` : undefined,
+  }));
   const byDay = countByDay(all);
   // The chart's own local "DD/MM" label for the selected day (kept consistent
   // with the bar the user clicked, rather than reformatting the timestamp).
   const dayLabel = dayFiltering ? byDay.find((d) => d.dateMs === dayMs)?.label : null;
+  const authorName = authorFiltering
+    ? byAuthor.find((s) => s.id === authorId)?.label
+    : null;
 
   const rows = prs.map((pr) => ({
     number: pr.number,
@@ -81,14 +92,22 @@ export default async function AllPullRequestsPage({
         title={
           filtering
             ? `Open PRs with blockers or majors (${prs.length})`
-            : dayFiltering
-              ? `PRs opened on ${dayLabel ?? "that day"} (${prs.length})`
-              : `All PRs (${prs.length})`
+            : authorFiltering
+              ? `PRs by ${authorName ?? "this junior"} (${prs.length})`
+              : dayFiltering
+                ? `PRs opened on ${dayLabel ?? "that day"} (${prs.length})`
+                : `All PRs (${prs.length})`
         }
       >
         {filtering && (
           <p style={{ color: "var(--muted)", fontSize: 13, marginTop: 0 }}>
             Showing only open PRs that have a blocker or major.{" "}
+            <a href="/dashboard/prs">Show all PRs</a>
+          </p>
+        )}
+        {authorFiltering && (
+          <p style={{ color: "var(--muted)", fontSize: 13, marginTop: 0 }}>
+            Showing only PRs by {authorName ?? "the selected junior"}.{" "}
             <a href="/dashboard/prs">Show all PRs</a>
           </p>
         )}

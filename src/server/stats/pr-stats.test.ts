@@ -8,7 +8,8 @@ function pr(authorName: string, createdAt: Date): PRListItem {
     number: 1,
     title: "t",
     status: "open",
-    authorId: "a",
+    // Distinct authors get distinct ids — countByAuthor keys on the id.
+    authorId: authorName,
     authorName,
     repoFullName: "colman/app",
     createdAt,
@@ -19,15 +20,15 @@ function pr(authorName: string, createdAt: Date): PRListItem {
 }
 
 describe("countByAuthor", () => {
-  it("counts PRs per author, most prolific first", () => {
+  it("counts PRs per author, most prolific first, keyed by id", () => {
     const rows = countByAuthor([
       pr("Elyan", new Date("2026-06-01")),
       pr("Elyan", new Date("2026-06-02")),
       pr("Raz", new Date("2026-06-03")),
     ]);
     expect(rows).toEqual([
-      { label: "Elyan", count: 2 },
-      { label: "Raz", count: 1 },
+      { id: "Elyan", label: "Elyan", count: 2 },
+      { id: "Raz", label: "Raz", count: 1 },
     ]);
   });
 

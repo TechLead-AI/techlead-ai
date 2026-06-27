@@ -22,6 +22,20 @@ describe("PieChart", () => {
     const { container } = render(<PieChart data={[{ label: "Solo", count: 5 }]} />);
     expect(container.querySelector("circle")).not.toBeNull();
   });
+
+  it("links each slice and legend row to its filtered view when given an href", () => {
+    const { container } = render(
+      <PieChart
+        data={[
+          { id: "e", label: "Elyan", count: 3, href: "/dashboard/prs?author=e" },
+          { id: "r", label: "Raz", count: 1, href: "/dashboard/prs?author=r" },
+        ]}
+      />,
+    );
+    // One slice link + one legend link per author.
+    expect(container.querySelectorAll('a[href="/dashboard/prs?author=e"]')).toHaveLength(2);
+    expect(container.querySelectorAll('a[href="/dashboard/prs?author=r"]')).toHaveLength(2);
+  });
 });
 
 describe("Histogram", () => {

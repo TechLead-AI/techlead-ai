@@ -10,6 +10,10 @@ const pad = (n: number) => String(n).padStart(2, "0");
 export interface CountSlice {
   label: string;
   count: number;
+  /** Stable id for the slice (e.g. the author id), used to build links. */
+  id?: string;
+  /** When set, the slice and its legend row link here. */
+  href?: string;
 }
 
 /** A link to one PR, for the histogram's hover drill-down. */
@@ -29,14 +33,20 @@ export interface DayCount {
   prs: DayPR[];
 }
 
-/** PRs per author, most prolific first. */
+/**
+ * PRs per author, most prolific first. Keyed by author id (not name) so two
+ * juniors who happen to share a display name stay distinct, and the id can
+ * drive a "filter to this junior" link.
+ */
 export function countByAuthor(prs: PRListItem[]): CountSlice[] {
-  const byAuthor = new Map<string, number>();
+  const byAuthor = new Map<string, { label: string; count: number }>();
   for (const pr of prs) {
-    byAuthor.set(pr.authorName, (byAuthor.get(pr.authorName) ?? 0) + 1);
+    const entry = byAuthor.get(pr.authorId) ?? { label: pr.authorName, count: 0 };
+    entry.count += 1;
+    byAuthor.set(pr.authorId, entry);
   }
   return [...byAuthor.entries()]
-    .map(([label, count]) => ({ label, count }))
+    .map(([id, { label, count }]) => ({ id, label, count }))
     .sort((a, b) => b.count - a.count);
 }
 

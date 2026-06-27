@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, type ReactNode } from "react";
 import type { CountSlice, DayCount } from "@/server/stats/pr-stats";
 
 /**
@@ -38,14 +38,17 @@ export function PieChart({ data, size = FIGURE_HEIGHT }: { data: CountSlice[]; s
       <div style={{ position: "relative", width: size, height: size }}>
         <svg width={size} height={size} role="img" aria-label="PRs per junior">
           {single ? (
-            <circle
-              cx={r}
-              cy={r}
-              r={r}
-              fill={colored[0].color}
-              onMouseEnter={() => setHover(0)}
-              onMouseLeave={() => setHover(null)}
-            />
+            <SliceLink href={colored[0].href}>
+              <circle
+                cx={r}
+                cy={r}
+                r={r}
+                fill={colored[0].color}
+                onMouseEnter={() => setHover(0)}
+                onMouseLeave={() => setHover(null)}
+                style={{ cursor: colored[0].href ? "pointer" : "default" }}
+              />
+            </SliceLink>
           ) : (
             slicePaths(colored, total, r, hover, setHover)
           )}
@@ -86,7 +89,7 @@ export function PieChart({ data, size = FIGURE_HEIGHT }: { data: CountSlice[]; s
               alignItems: "center",
               gap: 8,
               marginBottom: 4,
-              cursor: "default",
+              cursor: d.href ? "pointer" : "default",
               opacity: hover === null || hover === i ? 1 : 0.5,
             }}
           >
@@ -99,7 +102,8 @@ export function PieChart({ data, size = FIGURE_HEIGHT }: { data: CountSlice[]; s
                 display: "inline-block",
               }}
             />
-            <span>{d.label}</span>
+            {/* The name links to that junior's filtered view when available. */}
+            {d.href ? <a href={d.href}>{d.label}</a> : <span>{d.label}</span>}
             <span style={{ color: "var(--muted)" }}>
               {d.count} ({Math.round((d.count / total) * 100)}%)
             </span>
@@ -129,17 +133,23 @@ function slicePaths(
     const y2 = r + r * Math.sin(end);
     const path = `M ${r} ${r} L ${x1.toFixed(2)} ${y1.toFixed(2)} A ${r} ${r} 0 ${large} 1 ${x2.toFixed(2)} ${y2.toFixed(2)} Z`;
     return (
-      <path
-        key={d.label}
-        d={path}
-        fill={d.color}
-        opacity={hover === null || hover === i ? 1 : 0.5}
-        onMouseEnter={() => setHover(i)}
-        onMouseLeave={() => setHover(null)}
-        style={{ cursor: "default" }}
-      />
+      <SliceLink key={d.label} href={d.href}>
+        <path
+          d={path}
+          fill={d.color}
+          opacity={hover === null || hover === i ? 1 : 0.5}
+          onMouseEnter={() => setHover(i)}
+          onMouseLeave={() => setHover(null)}
+          style={{ cursor: d.href ? "pointer" : "default" }}
+        />
+      </SliceLink>
     );
   });
+}
+
+/** Wraps a slice in an SVG link when the slice has somewhere to go. */
+function SliceLink({ href, children }: { href?: string; children: ReactNode }) {
+  return href ? <a href={href}>{children}</a> : <>{children}</>;
 }
 
 const HMARGIN = { top: 10, right: 10, bottom: 42, left: 26 };
