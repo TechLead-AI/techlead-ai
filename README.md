@@ -85,3 +85,13 @@ Set `GITHUB_APP_ID`, `GITHUB_APP_PRIVATE_KEY`, and `GITHUB_WEBHOOK_SECRET` in
 the database, and point the App's webhook at `/api/github/webhook` (use a tunnel
 like smee.io for local delivery). Mark which users are mentored juniors; only
 their PRs are reviewed.
+
+## Deploy to production (Railway)
+
+The same repo deploys to [Railway](https://railway.app) as three services that
+share one database: a public **web** service (dashboards + webhook), a private
+**worker** service (runs reviews + posts back), and managed **Postgres** (data +
+the pg-boss queue — still no Redis). Migrations run automatically on deploy via
+`npm run release`, and once the web service has a real `https://…` URL the GitHub
+App calls it directly (no smee tunnel). See [DEPLOY.md](DEPLOY.md) for the full
+step-by-step runbook.
