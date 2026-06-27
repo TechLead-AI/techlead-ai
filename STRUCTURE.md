@@ -97,7 +97,7 @@ Each module is small files with co-located `*.test.ts`.
         onboard.ts            # register a real repo + mentored juniors (+ test)
         store.ts              # Prisma adapter for the onboarding orchestration
       queue/
-        jobs.ts               # job data + shared handler
+        jobs.ts               # job data + shared handler (logs progress; + test)
         queue.ts              # pg-boss setup, enqueue, worker registration
       db/
         client.ts             # Prisma singleton

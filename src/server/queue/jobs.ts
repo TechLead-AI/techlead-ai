@@ -17,8 +17,18 @@ export interface ReviewJobData {
 
 export const REVIEW_QUEUE = "review-pr";
 
+/** A human-readable label for a job, for the worker's progress logs. */
+function jobLabel(data: ReviewJobData): string {
+  return data.github
+    ? `PR #${data.github.prNumber} (${data.github.repoFullName})`
+    : `PR ${data.pullRequestId}`;
+}
+
 /** Process one review job. Exported separately so it can be unit-tested. */
 export async function handleReviewJob(data: ReviewJobData): Promise<void> {
+  const label = jobLabel(data);
+  console.log(`Reviewing ${label}...`);
+
   const { reviewId, skipped } = await reviewPullRequest({
     orgId: data.orgId,
     pullRequestId: data.pullRequestId,
@@ -26,8 +36,16 @@ export async function handleReviewJob(data: ReviewJobData): Promise<void> {
     diff: data.diff,
   });
 
+  if (skipped) {
+    console.log(`Skipped ${label} — this commit was already reviewed.`);
+    return;
+  }
+
   // Post back to GitHub only for fresh, webhook-originated reviews.
-  if (!skipped && data.github && isGithubConfigured()) {
+  if (data.github && isGithubConfigured()) {
     await postStoredReview(data.github.repoFullName, data.github.prNumber, reviewId);
+    console.log(`Posted review for ${label}.`);
+  } else {
+    console.log(`Stored review for ${label} (no GitHub post).`);
   }
 }
