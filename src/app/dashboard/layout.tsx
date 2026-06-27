@@ -36,6 +36,7 @@ export default async function DashboardLayout({ children }: { children: ReactNod
           {isManager && <a href="/dashboard/prs">All PRs</a>}
           {isManager && <a href="/dashboard/manage-conventions">Conventions</a>}
           {isManager && <a href="/dashboard/review">Review a PR</a>}
+          {isManager && <a href="/dashboard/add-junior">Add junior</a>}
         </nav>
         <div style={{ display: "flex", gap: 12, alignItems: "center" }}>
           <span style={{ color: "var(--muted)", fontSize: 13 }}>

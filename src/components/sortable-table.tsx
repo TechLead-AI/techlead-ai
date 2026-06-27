@@ -2,6 +2,7 @@
 
 import { useMemo, useState, type CSSProperties } from "react";
 import { TrendBadge } from "./charts";
+import { NewDot } from "./new-dot";
 import { StatusBadge } from "./ui";
 import { formatDate } from "@/lib/format";
 import type { TrendDirection } from "@/server/db/dashboard";
@@ -21,7 +22,8 @@ export type ColumnType =
   | "date"
   | "link"
   | "badge"
-  | "status";
+  | "status"
+  | "issues";
 
 export interface Column {
   key: string;
@@ -30,8 +32,17 @@ export interface Column {
   align?: "left" | "right";
   /** For type "link": the row field holding the href. */
   hrefKey?: string;
-  /** For type "link": a muted secondary text shown after the link. */
+  /**
+   * For type "link": a muted secondary text shown after the link.
+   * For type "issues": the row field holding the total comment count
+   * (`key` itself holds the high-severity count, which drives the sort).
+   */
   subKey?: string;
+  /**
+   * For type "link": the row field holding an epoch-ms timestamp. When the
+   * value is within the last hour a "new" dot is shown before the link.
+   */
+  newSinceKey?: string;
 }
 
 export type Row = Record<string, unknown>;
@@ -47,7 +58,9 @@ export interface SortableTableProps {
   emptyMessage?: string;
 }
 
-const NUMERIC: ColumnType[] = ["number", "percent", "date"];
+// "issues" sorts by its high-severity count (column.key) so the most
+// actionable PRs surface first.
+const NUMERIC: ColumnType[] = ["number", "percent", "date", "issues"];
 
 export function SortableTable({
   columns,
@@ -199,11 +212,31 @@ function Cell({ column, row }: { column: Column; row: Row }) {
       return <>{value == null ? "—" : formatDate(Number(value))}</>;
     case "number":
       return <>{value == null ? "—" : String(value)}</>;
+    case "issues": {
+      // One dense cell in place of separate "Blockers + majors" and
+      // "Comments" columns: high-severity count (coloured when present) then
+      // the total. `value` (column.key) is the high-severity count.
+      const high = Number(value ?? 0);
+      const total = column.subKey ? Number(row[column.subKey] ?? 0) : 0;
+      if (total === 0) return <span style={muted}>—</span>;
+      return (
+        <span style={{ fontSize: 13 }}>
+          {high > 0 && (
+            <strong style={{ color: "var(--bad)" }}>{high} high</strong>
+          )}
+          <span style={{ ...muted, marginLeft: high > 0 ? 6 : 0 }}>
+            {high > 0 ? `· ${total}` : total}
+          </span>
+        </span>
+      );
+    }
     case "link": {
       const href = column.hrefKey ? String(row[column.hrefKey] ?? "") : "";
       const sub = column.subKey ? row[column.subKey] : null;
+      const since = column.newSinceKey ? row[column.newSinceKey] : null;
       return (
         <>
+          {since != null && <NewDot since={Number(since)} />}
           <a href={href}>{String(value ?? "")}</a>
           {sub ? <span style={{ ...muted, marginLeft: 6 }}>{String(sub)}</span> : null}
         </>

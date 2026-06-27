@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 import { describe, it, expect } from "vitest";
-import { render, screen } from "@testing-library/react";
+import { render, screen, fireEvent } from "@testing-library/react";
 import { PieChart, Histogram } from "./figures";
 
 describe("PieChart", () => {
@@ -22,19 +22,51 @@ describe("PieChart", () => {
     const { container } = render(<PieChart data={[{ label: "Solo", count: 5 }]} />);
     expect(container.querySelector("circle")).not.toBeNull();
   });
-});
 
-describe("Histogram", () => {
-  it("draws one bar per day bucket", () => {
+  it("links each slice and legend row to its filtered view when given an href", () => {
     const { container } = render(
-      <Histogram
+      <PieChart
         data={[
-          { dateMs: 1, label: "6/1", count: 2 },
-          { dateMs: 2, label: "6/2", count: 0 },
-          { dateMs: 3, label: "6/3", count: 1 },
+          { id: "e", label: "Elyan", count: 3, href: "/dashboard/prs?author=e" },
+          { id: "r", label: "Raz", count: 1, href: "/dashboard/prs?author=r" },
         ]}
       />,
     );
-    expect(container.querySelectorAll("rect")).toHaveLength(3);
+    // One slice link + one legend link per author.
+    expect(container.querySelectorAll('a[href="/dashboard/prs?author=e"]')).toHaveLength(2);
+    expect(container.querySelectorAll('a[href="/dashboard/prs?author=r"]')).toHaveLength(2);
+  });
+});
+
+describe("Histogram", () => {
+  const sample = [
+    { dateMs: 1, label: "6/1", count: 2, prs: [
+      { href: "/dashboard/prs/a", text: "#1 first" },
+      { href: "/dashboard/prs/b", text: "#2 second" },
+    ] },
+    { dateMs: 2, label: "6/2", count: 0, prs: [] },
+    { dateMs: 3, label: "6/3", count: 1, prs: [{ href: "/dashboard/prs/c", text: "#3 third" }] },
+  ];
+
+  it("draws a hit target plus a bar per day bucket", () => {
+    const { container } = render(<Histogram data={sample} />);
+    // Each day has an invisible full-height hit target and a visible bar.
+    expect(container.querySelectorAll("rect")).toHaveLength(6);
+  });
+
+  it("links each day with PRs to its day-filtered view", () => {
+    const { container } = render(<Histogram data={sample} />);
+    expect(container.querySelector('a[href="/dashboard/prs?day=1"]')).not.toBeNull();
+    expect(container.querySelector('a[href="/dashboard/prs?day=3"]')).not.toBeNull();
+    // The empty day is not a link.
+    expect(container.querySelector('a[href="/dashboard/prs?day=2"]')).toBeNull();
+  });
+
+  it("shows the day's PRs on hover", () => {
+    const { container } = render(<Histogram data={sample} />);
+    const firstDay = container.querySelector('a[href="/dashboard/prs?day=1"] g')!;
+    fireEvent.mouseEnter(firstDay);
+    expect(screen.getByText("#1 first")).toBeInTheDocument();
+    expect(screen.getByText("#2 second")).toBeInTheDocument();
   });
 });

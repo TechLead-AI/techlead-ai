@@ -8,7 +8,8 @@ function pr(authorName: string, createdAt: Date): PRListItem {
     number: 1,
     title: "t",
     status: "open",
-    authorId: "a",
+    // Distinct authors get distinct ids — countByAuthor keys on the id.
+    authorId: authorName,
     authorName,
     repoFullName: "colman/app",
     createdAt,
@@ -19,15 +20,15 @@ function pr(authorName: string, createdAt: Date): PRListItem {
 }
 
 describe("countByAuthor", () => {
-  it("counts PRs per author, most prolific first", () => {
+  it("counts PRs per author, most prolific first, keyed by id", () => {
     const rows = countByAuthor([
       pr("Elyan", new Date("2026-06-01")),
       pr("Elyan", new Date("2026-06-02")),
       pr("Raz", new Date("2026-06-03")),
     ]);
     expect(rows).toEqual([
-      { label: "Elyan", count: 2 },
-      { label: "Raz", count: 1 },
+      { id: "Elyan", label: "Elyan", count: 2 },
+      { id: "Raz", label: "Raz", count: 1 },
     ]);
   });
 
@@ -50,6 +51,15 @@ describe("countByDay", () => {
     expect(rows[2].count).toBe(0); // Jun 3 empty
     expect(rows[3].count).toBe(1); // one on Jun 4
     expect(rows[0].label).toBe("01/06");
+  });
+
+  it("carries each day's PRs as drill-down links", () => {
+    const rows = countByDay([pr("A", new Date(2026, 5, 1, 9))]);
+    expect(rows[0].prs).toHaveLength(1);
+    expect(rows[0].prs[0].href).toMatch(/^\/dashboard\/prs\//);
+    expect(rows[0].prs[0].text).toBe("#1 t");
+    // Empty days carry no PRs.
+    expect(rows.find((r) => r.count === 0)?.prs ?? []).toEqual([]);
   });
 
   it("is empty for no PRs", () => {

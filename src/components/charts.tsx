@@ -257,7 +257,7 @@ export function BarList({ data }: { data: BarDatum[] }) {
 const TREND_STYLE: Record<TrendDirection, { label: string; color: string }> = {
   improving: { label: "↑ improving", color: "var(--good)" },
   flat: { label: "→ steady", color: "var(--muted)" },
-  worsening: { label: "↓ needs attention", color: "var(--bad)" },
+  worsening: { label: "↓ slipping", color: "var(--bad)" },
   new: { label: "• new", color: "var(--accent)" },
 };
 

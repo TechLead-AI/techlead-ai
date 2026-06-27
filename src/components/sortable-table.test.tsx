@@ -45,6 +45,50 @@ describe("SortableTable", () => {
     expect(bodyNames()).toEqual(["Adi", "Raz", "Elyan"]);
   });
 
+  it("renders the issues column: high-severity count plus total", () => {
+    const issueCols: Column[] = [
+      { key: "high", label: "Issues", type: "issues", subKey: "total" },
+    ];
+    render(
+      <SortableTable
+        columns={issueCols}
+        rows={[{ high: 2, total: 12 }]}
+        initialSortKey="high"
+      />,
+    );
+    expect(screen.getByText("2 high")).toBeInTheDocument();
+    expect(screen.getByText("· 12")).toBeInTheDocument();
+  });
+
+  it("shows only the total when there are no high-severity issues", () => {
+    const issueCols: Column[] = [
+      { key: "high", label: "Issues", type: "issues", subKey: "total" },
+    ];
+    render(
+      <SortableTable
+        columns={issueCols}
+        rows={[{ high: 0, total: 5 }]}
+        initialSortKey="high"
+      />,
+    );
+    expect(screen.queryByText(/high/)).toBeNull();
+    expect(screen.getByText("5")).toBeInTheDocument();
+  });
+
+  it("shows a dash when a PR has no comments at all", () => {
+    const issueCols: Column[] = [
+      { key: "high", label: "Issues", type: "issues", subKey: "total" },
+    ];
+    render(
+      <SortableTable
+        columns={issueCols}
+        rows={[{ high: 0, total: 0 }]}
+        initialSortKey="high"
+      />,
+    );
+    expect(screen.getByText("—")).toBeInTheDocument();
+  });
+
   it("filters rows by the search box across searchKeys", () => {
     render(
       <SortableTable
@@ -56,5 +100,22 @@ describe("SortableTable", () => {
     );
     fireEvent.change(screen.getByRole("textbox"), { target: { value: "ely" } });
     expect(bodyNames()).toEqual(["Elyan"]);
+  });
+
+  it("matches a date substring via a searchable text field", () => {
+    const dated = [
+      { name: "Raz", href: "/j/raz", login: "@raz", reviews: 4, opened: "27/06/2026" },
+      { name: "Adi", href: "/j/adi", login: "@adi", reviews: 1, opened: "25/06/2026" },
+    ];
+    render(
+      <SortableTable
+        columns={columns}
+        rows={dated}
+        initialSortKey="name"
+        searchKeys={["name", "opened"]}
+      />,
+    );
+    fireEvent.change(screen.getByRole("textbox"), { target: { value: "27/06" } });
+    expect(bodyNames()).toEqual(["Raz"]);
   });
 });
