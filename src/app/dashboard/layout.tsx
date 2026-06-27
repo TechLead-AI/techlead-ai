@@ -1,6 +1,8 @@
 import { redirect } from "next/navigation";
 import type { ReactNode } from "react";
 import { getSessionUser } from "@/server/auth/session";
+import { getLatestReviewNotice } from "@/server/db/latest-review";
+import { NewReviewPopup } from "@/components/new-review-popup";
 
 export default async function DashboardLayout({ children }: { children: ReactNode }) {
   const user = await getSessionUser();
@@ -8,8 +10,12 @@ export default async function DashboardLayout({ children }: { children: ReactNod
 
   const isManager = user.role === "manager" || user.role === "admin";
 
+  // Managers get a popup announcing the most recent review, wherever they are.
+  const latestReview = isManager ? await getLatestReviewNotice(user.orgId) : null;
+
   return (
     <div className="dash-shell">
+      {latestReview && <NewReviewPopup notice={latestReview} />}
       {/* Header. On desktop the brand, links, and user/sign-out sit on one
           row; on mobile it splits into a pinned top row (brand + user/sign-out)
           with the links on the row beneath (see globals.css). */}

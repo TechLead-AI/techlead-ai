@@ -71,6 +71,7 @@ Each module is small files with co-located `*.test.ts`.
       figures.tsx             # interactive PieChart + Histogram SVGs (client; + test)
       sortable-table.tsx      # generic sortable/searchable table (client; + test)
       new-dot.tsx             # "new" dot for items added in the last hour (client; + test)
+      new-review-popup.tsx    # manager popup announcing the latest review; shown once per browser (client; + test)
       comment-card.tsx        # renders one review comment with all Layer 1 data
       convention-editor.tsx   # one editable convention layer (collapsible form)
       icons.tsx               # inline SVG glyphs (folder, document) for the tree
@@ -111,6 +112,7 @@ Each module is small files with co-located `*.test.ts`.
         reviews.ts            # gather context + store a review run
         dashboard.ts          # dashboard read queries: roster, profile, team stats (component 7)
         pull-request.ts       # PR list + detail read queries
+        latest-review.ts      # newest review in an org (powers the manager popup; + test)
         conventions.ts        # convention tree read + versioned save (component 2)
     worker/index.ts           # worker process (consumes the queue)
     lib/
