@@ -13,8 +13,8 @@ const PR_COLUMNS: Column[] = [
   { key: "repo", label: "Repo", type: "text" },
   { key: "status", label: "Status", type: "status" },
   { key: "latestDensity", label: "Density", type: "number", align: "left" },
-  { key: "highSeverityCount", label: "Blockers + majors", type: "number", align: "left" },
-  { key: "commentCount", label: "Comments", type: "number", align: "left" },
+  // High-severity count + total comments, collapsed into one dense column.
+  { key: "highSeverityCount", label: "Issues", type: "issues", subKey: "commentCount", align: "left" },
   { key: "createdAt", label: "Opened", type: "date", align: "left" },
 ];
 
@@ -47,7 +47,9 @@ export default async function AllPullRequestsPage({
     href: `/dashboard/prs/${pr.id}`,
     author: pr.authorName,
     authorHref: `/dashboard/juniors/${pr.authorId}`,
-    repo: pr.repoFullName,
+    // Just the repo name — the org/owner prefix is the same for every row and
+    // only made the table heavier.
+    repo: pr.repoFullName.split("/").pop() ?? pr.repoFullName,
     status: pr.status,
     latestDensity: pr.latestDensity,
     highSeverityCount: pr.highSeverityCount,
