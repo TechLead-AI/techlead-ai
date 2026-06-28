@@ -23,6 +23,18 @@ describe("PieChart", () => {
     expect(container.querySelector("circle")).not.toBeNull();
   });
 
+  it("draws a full circle (not an invisible arc) when one author holds every PR", () => {
+    const { container } = render(
+      <PieChart data={[{ label: "Solo", count: 5 }, { label: "None", count: 0 }]} />,
+    );
+    // The 100% slice is a circle; the 0% slice draws nothing (no degenerate path).
+    expect(container.querySelector("circle")).not.toBeNull();
+    expect(container.querySelectorAll("path")).toHaveLength(0);
+    // Both still appear in the legend.
+    expect(screen.getByText("Solo")).toBeInTheDocument();
+    expect(screen.getByText("None")).toBeInTheDocument();
+  });
+
   it("links each slice and legend row to its filtered view when given an href", () => {
     const { container } = render(
       <PieChart
@@ -68,5 +80,15 @@ describe("Histogram", () => {
     fireEvent.mouseEnter(firstDay);
     expect(screen.getByText("#1 first")).toBeInTheDocument();
     expect(screen.getByText("#2 second")).toBeInTheDocument();
+  });
+
+  it("keeps the plot area non-negative at a sliver width", () => {
+    // Below the floor the x-axis would invert (x2 < x1). It must not.
+    const { container } = render(<Histogram data={sample} width={20} />);
+    const lines = [...container.querySelectorAll("line")];
+    const xAxis = lines.find((l) => l.getAttribute("y1") === l.getAttribute("y2"))!;
+    expect(Number(xAxis.getAttribute("x2"))).toBeGreaterThan(
+      Number(xAxis.getAttribute("x1")),
+    );
   });
 });

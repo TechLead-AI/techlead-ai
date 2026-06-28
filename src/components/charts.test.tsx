@@ -24,6 +24,16 @@ describe("LineChart", () => {
     );
     expect(container.querySelector('a[href="/dashboard/prs/abc"]')).not.toBeNull();
   });
+
+  it("keeps the plot area non-negative at a sliver width", () => {
+    // Below the floor the x-axis would invert and coordinates go NaN.
+    const { container } = render(<LineChart points={[pt(1), pt(2)]} width={20} />);
+    const lines = [...container.querySelectorAll("line")];
+    const xAxis = lines.find((l) => l.getAttribute("y1") === l.getAttribute("y2"))!;
+    expect(Number(xAxis.getAttribute("x2"))).toBeGreaterThan(
+      Number(xAxis.getAttribute("x1")),
+    );
+  });
 });
 
 describe("BarList", () => {

@@ -80,6 +80,16 @@ export function SortableTable({
     [columns],
   );
 
+  // A stable key per row, taken from a link column's href (unique per row), so
+  // re-sorting or searching moves the right row instead of reusing a slot by
+  // position — which would, e.g., leave a "new" dot on the wrong row.
+  const keyCol = useMemo(
+    () => columns.find((c) => c.type === "link" && c.hrefKey),
+    [columns],
+  );
+  const rowKey = (row: Row, i: number): string =>
+    keyCol?.hrefKey ? String(row[keyCol.hrefKey] ?? i) : String(i);
+
   const visible = useMemo(() => {
     const q = query.trim().toLowerCase();
     const filtered =
@@ -176,7 +186,7 @@ export function SortableTable({
             </tr>
           ) : (
             visible.map((row, i) => (
-              <tr key={i} style={{ borderTop: "1px solid var(--border)" }}>
+              <tr key={rowKey(row, i)} style={{ borderTop: "1px solid var(--border)" }}>
                 {columns.map((c) => (
                   <td
                     key={c.key}

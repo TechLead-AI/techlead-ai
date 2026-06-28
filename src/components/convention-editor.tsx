@@ -1,5 +1,14 @@
+"use client";
+
+import { useEffect, useState } from "react";
 import type { ConventionScope } from "@/server/conventions/merge";
 import { DocIcon } from "./icons";
+
+// Editing conventions is a desk task: on phones (and touch devices with no
+// hover) the Save button is hidden (globals.css), so the textarea must be
+// read-only too — otherwise you could type a whole doc with no way to save it.
+// Same query as the `.desktop-only` rule so the two always agree.
+const COMPACT_QUERY = "(max-width: 640px), (hover: none) and (pointer: coarse)";
 
 /**
  * One editable convention layer in the tree. Collapsed by default; expanding it
@@ -22,6 +31,18 @@ export function ConventionEditor({
   version: number;
 }) {
   const hasDoc = version > 0;
+
+  // Decide read-only after mount (browser-only state), like NewDot, so the
+  // server render and first client paint match and there's no hydration drift.
+  // Re-checks on resize/orientation change so flipping a phone keeps it locked.
+  const [readOnly, setReadOnly] = useState(false);
+  useEffect(() => {
+    const mq = window.matchMedia(COMPACT_QUERY);
+    const sync = () => setReadOnly(mq.matches);
+    sync();
+    mq.addEventListener("change", sync);
+    return () => mq.removeEventListener("change", sync);
+  }, []);
 
   return (
     <details
@@ -62,6 +83,8 @@ export function ConventionEditor({
           name="markdown"
           rows={12}
           defaultValue={markdown}
+          readOnly={readOnly}
+          aria-readonly={readOnly}
           placeholder="Describe what good code looks like for this layer (markdown)…"
           style={{
             width: "100%",
@@ -72,6 +95,9 @@ export function ConventionEditor({
             padding: "10px 12px",
             fontFamily: "ui-monospace, monospace",
             fontSize: 13,
+            // Locked layers read as muted and show the no-edit cursor.
+            opacity: readOnly ? 0.7 : 1,
+            cursor: readOnly ? "not-allowed" : "text",
           }}
         />
         {/* Editing conventions is a desk task — hide the save/create on phones. */}

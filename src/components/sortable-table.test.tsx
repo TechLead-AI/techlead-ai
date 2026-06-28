@@ -45,6 +45,17 @@ describe("SortableTable", () => {
     expect(bodyNames()).toEqual(["Adi", "Raz", "Elyan"]);
   });
 
+  it("keeps each row's DOM node tied to its data across a re-sort", () => {
+    // Stable keys: when the order changes, React should move a row's existing
+    // node, not reuse a node by position (which is what would strand state like
+    // a "new" dot on the wrong row).
+    render(<SortableTable columns={columns} rows={rows} initialSortKey="name" />);
+    const razAnchorBefore = screen.getByText("Raz").closest("a");
+    fireEvent.click(screen.getByRole("columnheader", { name: /reviews/i }));
+    const razAnchorAfter = screen.getByText("Raz").closest("a");
+    expect(razAnchorAfter).toBe(razAnchorBefore);
+  });
+
   it("renders the issues column: high-severity count plus total", () => {
     const issueCols: Column[] = [
       { key: "high", label: "Issues", type: "issues", subKey: "total" },

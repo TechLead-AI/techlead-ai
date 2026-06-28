@@ -134,9 +134,32 @@ function slicePaths(
 ) {
   let angle = -Math.PI / 2; // start at 12 o'clock
   return data.map((d, i) => {
+    // A zero slice has nothing to draw; skip it (an arc of width 0 would be a
+    // degenerate, invisible sliver). It still appears in the legend.
+    if (d.count <= 0) return null;
+
     const start = angle;
     const end = angle + (d.count / total) * 2 * Math.PI;
     angle = end;
+
+    const shared = {
+      fill: d.color,
+      opacity: hover === null || hover === i ? 1 : 0.5,
+      onMouseEnter: () => setHover(i),
+      onMouseLeave: () => setHover(null),
+      style: { cursor: d.href ? "pointer" : "default" },
+    };
+
+    // A slice that is the whole pie can't be drawn as one arc — its start and
+    // end points coincide, so the path collapses to nothing. Draw a full circle.
+    if (d.count >= total) {
+      return (
+        <SliceLink key={d.label} href={d.href}>
+          <circle cx={r} cy={r} r={r} {...shared} />
+        </SliceLink>
+      );
+    }
+
     const large = end - start > Math.PI ? 1 : 0;
     const x1 = r + r * Math.cos(start);
     const y1 = r + r * Math.sin(start);
@@ -145,14 +168,7 @@ function slicePaths(
     const path = `M ${r} ${r} L ${x1.toFixed(2)} ${y1.toFixed(2)} A ${r} ${r} 0 ${large} 1 ${x2.toFixed(2)} ${y2.toFixed(2)} Z`;
     return (
       <SliceLink key={d.label} href={d.href}>
-        <path
-          d={path}
-          fill={d.color}
-          opacity={hover === null || hover === i ? 1 : 0.5}
-          onMouseEnter={() => setHover(i)}
-          onMouseLeave={() => setHover(null)}
-          style={{ cursor: d.href ? "pointer" : "default" }}
-        />
+        <path d={path} {...shared} />
       </SliceLink>
     );
   });
@@ -166,6 +182,10 @@ function SliceLink({ href, children }: { href?: string; children: ReactNode }) {
 const HMARGIN = { top: 10, right: 10, bottom: 42, left: 26 };
 // At most this many PR titles in the hover popover; the rest are summarised.
 const POPOVER_LIMIT = 6;
+// Never draw narrower than this: below it the plot area would go negative (axes
+// invert, bars flip, the 180px tooltip overflows). A real container is always
+// wider; this is just a floor so the geometry stays sane on a sliver of a screen.
+const MIN_PLOT_WIDTH = 180;
 
 /**
  * A vertical-bar histogram of PRs per day. Hovering a day with PRs shows the
@@ -184,7 +204,8 @@ export function Histogram({
 }) {
   const [hover, setHover] = useState<number | null>(null);
   // Fill the card on wide screens; shrink to fit on a phone.
-  const { ref, width: w } = useElementWidth(width);
+  const { ref, width: measuredW } = useElementWidth(width);
+  const w = Math.max(measuredW, MIN_PLOT_WIDTH);
 
   if (data.length === 0) return <p style={{ color: "var(--muted)" }}>No data yet.</p>;
 

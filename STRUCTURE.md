@@ -73,7 +73,7 @@ Each module is small files with co-located `*.test.ts`.
       new-dot.tsx             # "new" dot for items added in the last hour (client; + test)
       new-review-popup.tsx    # manager popup announcing the latest review; shown once per browser (client; + test)
       comment-card.tsx        # renders one review comment with all Layer 1 data
-      convention-editor.tsx   # one editable convention layer (collapsible form)
+      convention-editor.tsx   # one convention layer (collapsible form; client — read-only on mobile; + test)
       icons.tsx               # inline SVG glyphs (folder, document) for the tree
       ui.tsx                  # Card, Stat, SeverityBadge, StatusBadge, Tag
       use-element-width.ts    # hook: measure a container so charts fill it (client; + test)
