@@ -10,5 +10,13 @@ coverage/
 # Claude Code local files
 .claude/worktrees/
 
+# Deck build renders (regenerate with .deckbuild/build.cjs)
+slide-*.jpg
+presentation/*.pdf
+.deckbuild/package-lock.json
+
+# Office temp/lock files
+~$*.pptx
+
 # macOS
 .DS_Store

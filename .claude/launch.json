@@ -6,6 +6,15 @@
       "runtimeExecutable": "npm",
       "runtimeArgs": ["run", "dev:preview", "--", "-p", "3010"],
       "port": 3010
+    },
+    {
+      "name": "new-review-popup",
+      "runtimeExecutable": "bash",
+      "runtimeArgs": [
+        "-c",
+        "cd '/Users/elyan/colman/dev club/TechLead-AI-new-review-popup' && npm run dev:preview -- -p 3012"
+      ],
+      "port": 3012
     }
   ]
 }
