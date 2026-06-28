@@ -51,35 +51,43 @@ a:hover {
   padding: 24px;
 }
 
-/* The header is two stacked rows: a top row (brand + user/sign-out) and a row
-   of page links beneath it, with the separation line under the links. */
-.dash-topbar {
+/* Desktop: brand, page links, and user/sign-out all share one row. The
+   `display: contents` on the top row lets the brand and user/sign-out join the
+   header's flex line, so the links can sit between them. */
+.dash-header {
   display: flex;
   align-items: center;
-  justify-content: space-between;
   gap: 16px;
-  padding-bottom: 12px;
-}
-
-.dash-nav {
-  display: flex;
-  gap: 16px;
-  align-items: center;
-  flex-wrap: wrap;
   padding-bottom: 16px;
   border-bottom: 1px solid var(--border);
   margin-bottom: 24px;
 }
 
-/* Keep the "Tech Lead AI" wordmark on a single line. */
+.dash-topbar {
+  display: contents;
+}
+
+/* order places the links between the brand and the user/sign-out on the one
+   desktop row; white-space keeps the "Tech Lead AI" wordmark on a single line. */
 .dash-brand {
+  order: 1;
   display: flex;
   align-items: center;
   gap: 8px;
   white-space: nowrap;
 }
 
+.dash-nav {
+  order: 2;
+  display: flex;
+  gap: 16px;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
 .dash-userbar {
+  order: 3;
+  margin-left: auto;
   display: flex;
   gap: 12px;
   align-items: center;
@@ -141,11 +149,22 @@ a:hover {
     padding: 16px;
   }
 
+  /* Drop the desktop one-row layout: let the top row and links become direct
+     children of the shell (a tall box) so the pinned top row can stay stuck
+     across the whole page. */
+  .dash-header {
+    display: contents;
+  }
+
   /* Pin the brand + user/sign-out row to the top while scrolling, with the
      separation line attached so it stays visible too. Negative side margins let
      the background and line span the full screen width while the content stays
      aligned with the page. */
   .dash-topbar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
     position: sticky;
     top: 0;
     z-index: 10;
@@ -155,11 +174,21 @@ a:hover {
     border-bottom: 1px solid var(--border);
   }
 
-  /* The separation line lives on the pinned top row now, not under the links. */
+  /* The links sit on their own row beneath the pinned top row (no separation
+     line of their own — that lives on the top row now). */
   .dash-nav {
-    padding-bottom: 0;
-    border-bottom: none;
     margin-bottom: 24px;
+  }
+
+  /* Inside the top row the brand sits left and the user/sign-out right; reset
+     the desktop ordering that was meant for the single-row layout. */
+  .dash-brand {
+    order: 0;
+  }
+
+  .dash-userbar {
+    order: 0;
+    margin-left: 0;
   }
 
   /* Manager-only actions we don't want triggered from a phone. */

@@ -10,11 +10,12 @@ export default async function DashboardLayout({ children }: { children: ReactNod
 
   return (
     <div className="dash-shell">
-      {/* Top row: brand on the left, user + sign-out on the right. A direct
-          child of the shell so it can stay pinned across the whole page while
-          scrolling on mobile (see globals.css). */}
-      <header className="dash-topbar">
-        <span className="dash-brand">
+      {/* Header. On desktop the brand, links, and user/sign-out sit on one
+          row; on mobile it splits into a pinned top row (brand + user/sign-out)
+          with the links on the row beneath (see globals.css). */}
+      <div className="dash-header">
+        <header className="dash-topbar">
+          <span className="dash-brand">
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img
             src="/logo.png"
@@ -65,6 +66,7 @@ export default async function DashboardLayout({ children }: { children: ReactNod
           </a>
         )}
       </nav>
+      </div>
       {children}
     </div>
   );
