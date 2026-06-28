@@ -79,7 +79,7 @@ export default async function DashboardHome() {
       >
         <h1 style={{ margin: 0 }}>Team</h1>
         {/* Stat blocks pushed to the right of the heading's row. */}
-        <div style={{ display: "flex", gap: 16, flexWrap: "wrap" }}>
+        <div className="stat-grid">
           <Card>
             <Stat label="Mentored juniors" value={stats.juniorCount} />
           </Card>
@@ -97,7 +97,7 @@ export default async function DashboardHome() {
           >
             <Card>
               <Stat
-                label="Open blocker/major PRs →"
+                label="Open blocker/major PRs"
                 value={stats.openHighSeverityPrCount}
               />
             </Card>
@@ -111,8 +111,10 @@ export default async function DashboardHome() {
             Trending worse, or stuck repeating the same mistakes — good 1:1 topics.
           </p>
           {/* Columns hug their content so trend/repeat sit right next to the
-              name rather than stretched across the card. */}
+              name rather than stretched across the card. Scrolls sideways on a
+              very narrow screen instead of overflowing the card. */}
           <div
+            className="scroll-x"
             style={{
               display: "grid",
               gridTemplateColumns: "max-content max-content max-content",

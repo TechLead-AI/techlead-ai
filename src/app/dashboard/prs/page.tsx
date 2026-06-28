@@ -83,11 +83,11 @@ export default async function AllPullRequestsPage({
     <div style={{ display: "flex", flexDirection: "column", gap: 24 }}>
       <h1 style={{ margin: 0 }}>All pull requests</h1>
 
-      <div style={{ display: "flex", gap: 24, flexWrap: "wrap", alignItems: "stretch" }}>
-        <Card title="PRs per junior" style={{ flex: 1, minWidth: 300 }}>
+      <div className="two-col">
+        <Card title="PRs per junior">
           <PieChart data={byAuthor} />
         </Card>
-        <Card title="PRs per day" style={{ flex: 1, minWidth: 300 }}>
+        <Card title="PRs per day">
           <Histogram data={byDay} />
         </Card>
       </div>

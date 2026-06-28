@@ -14,15 +14,7 @@ export function Card({
   style?: CSSProperties;
 }) {
   return (
-    <section
-      style={{
-        background: "var(--panel)",
-        border: "1px solid var(--border)",
-        borderRadius: 12,
-        padding: 20,
-        ...style,
-      }}
-    >
+    <section className="card" style={style}>
       {title && <h3 style={{ margin: "0 0 12px" }}>{title}</h3>}
       {children}
     </section>
@@ -32,8 +24,8 @@ export function Card({
 export function Stat({ label, value }: { label: string; value: ReactNode }) {
   return (
     <div>
-      <div style={{ color: "var(--muted)", fontSize: 13 }}>{label}</div>
-      <div style={{ fontSize: 24, fontWeight: 600 }}>{value}</div>
+      <div className="stat-label">{label}</div>
+      <div className="stat-value">{value}</div>
     </div>
   );
 }

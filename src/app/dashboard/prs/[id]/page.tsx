@@ -50,8 +50,9 @@ export default async function PullRequestPage({
           </div>
         </div>
 
-        {/* Status / lines / reviews share the title's row, pushed right. */}
-        <div style={{ display: "flex", gap: 16, flexWrap: "wrap" }}>
+        {/* Status / lines / reviews share the title's row, pushed right; they
+            stay on one line together, even on a phone. */}
+        <div className="stat-strip">
           <Card>
             <Stat label="Status" value={<StatusBadge status={pr.status} />} />
           </Card>

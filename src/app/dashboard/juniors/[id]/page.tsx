@@ -50,11 +50,6 @@ export default async function JuniorProfilePage({
   }));
   const latest = profile.trend[profile.trend.length - 1];
 
-  // Side-by-side cards share the row (stretching to equal height) and wrap on
-  // narrow screens.
-  const halfRow = { display: "flex", gap: 24, flexWrap: "wrap", alignItems: "stretch" } as const;
-  const half = { flex: 1, minWidth: 280 } as const;
-
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 24 }}>
       <div
@@ -71,8 +66,9 @@ export default async function JuniorProfilePage({
           <span style={{ color: "var(--muted)" }}>@{profile.githubLogin}</span>
           <TrendBadge trend={profile.trendDirection} />
         </div>
-        {/* Stat blocks pushed to the right of the name's row. */}
-        <div style={{ display: "flex", gap: 16, flexWrap: "wrap" }}>
+        {/* Stat blocks pushed to the right of the name's row; they stay on one
+            line together, even on a phone. */}
+        <div className="stat-strip">
           <Card>
             <Stat label="Reviews" value={profile.trend.length} />
           </Card>
@@ -88,20 +84,20 @@ export default async function JuniorProfilePage({
         </div>
       </div>
 
-      <div style={halfRow}>
-        <Card title="Issue density over time (lower is better)" style={half}>
+      <div className="two-col">
+        <Card title="Issue density over time (lower is better)">
           <LineChart points={densityPoints} color="var(--good)" />
         </Card>
-        <Card title="Repeat-mistake rate over time (lower is better)" style={half}>
+        <Card title="Repeat-mistake rate over time (lower is better)">
           <LineChart points={repeatPoints} color="var(--warn)" />
         </Card>
       </div>
 
-      <div style={halfRow}>
-        <Card title="Where the feedback lands (by category)" style={half}>
+      <div className="two-col">
+        <Card title="Where the feedback lands (by category)">
           <BarList data={toBars(profile.categoryMix)} />
         </Card>
-        <Card title="Top recurring mistakes — the 1:1 agenda" style={half}>
+        <Card title="Top recurring mistakes — the 1:1 agenda">
           {profile.topRecurringMistakes.length === 0 ? (
             <p style={{ color: "var(--muted)" }}>
               No repeated mistakes yet — great sign.

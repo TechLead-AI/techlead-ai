@@ -75,6 +75,7 @@ Each module is small files with co-located `*.test.ts`.
       convention-editor.tsx   # one editable convention layer (collapsible form)
       icons.tsx               # inline SVG glyphs (folder, document) for the tree
       ui.tsx                  # Card, Stat, SeverityBadge, StatusBadge, Tag
+      use-element-width.ts    # hook: measure a container so charts fill it (client; + test)
     server/
       auth/session.ts         # cookie session (component 8)
       http/redirect.ts        # host-agnostic relative redirect (proxy-safe; + test)

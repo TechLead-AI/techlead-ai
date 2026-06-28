@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useElementWidth } from "./use-element-width";
 import type { TrendDirection } from "@/server/db/dashboard";
 
 /**
@@ -35,17 +36,20 @@ export function LineChart({
   color = "var(--accent)",
 }: {
   points: LinePoint[];
+  /** Fallback width; the chart grows to fill its container when it can. */
   width?: number;
   height?: number;
   color?: string;
 }) {
   const [hover, setHover] = useState<number | null>(null);
+  // Fill the card on wide screens; shrink to fit on a phone.
+  const { ref, width: w } = useElementWidth(width);
 
   if (points.length === 0) {
     return <p style={{ color: "var(--muted)" }}>No data yet.</p>;
   }
 
-  const plotW = width - MARGIN.left - MARGIN.right;
+  const plotW = w - MARGIN.left - MARGIN.right;
   const plotH = height - MARGIN.top - MARGIN.bottom;
   const baseY = MARGIN.top + plotH;
   const max = Math.max(...points.map((p) => p.value), 1);
@@ -60,8 +64,16 @@ export function LineChart({
   const tickText = { fontSize: 10, fill: "var(--muted)" } as const;
 
   return (
-    <div style={{ position: "relative", width, height }}>
-      <svg width={width} height={height} role="img" aria-label="trend line">
+    <div ref={ref} style={{ position: "relative", width: "100%", height }}>
+      {/* Absolute so the SVG's own width never widens the card: the wrapper
+          width is driven by its container, and `w` is measured from it. */}
+      <svg
+        width={w}
+        height={height}
+        role="img"
+        aria-label="trend line"
+        style={{ position: "absolute", top: 0, left: 0 }}
+      >
         {/* y axis with 0 and max ticks */}
         <line x1={MARGIN.left} y1={MARGIN.top} x2={MARGIN.left} y2={baseY} stroke={axis} />
         <text x={MARGIN.left - 5} y={MARGIN.top + 4} textAnchor="end" {...tickText}>
@@ -128,7 +140,7 @@ export function LineChart({
         <div
           style={{
             position: "absolute",
-            left: Math.min(Math.max(coords[hover].x, 0), width - 8),
+            left: Math.min(Math.max(coords[hover].x, 0), w - 8),
             top: coords[hover].y,
             transform: "translate(-50%, -120%)",
             background: "var(--panel-2)",

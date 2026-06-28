@@ -9,36 +9,24 @@ export default async function DashboardLayout({ children }: { children: ReactNod
   const isManager = user.role === "manager" || user.role === "admin";
 
   return (
-    <div style={{ maxWidth: 980, margin: "0 auto", padding: "24px" }}>
-      <header
-        style={{
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "space-between",
-          paddingBottom: 16,
-          borderBottom: "1px solid var(--border)",
-          marginBottom: 24,
-        }}
-      >
-        <nav style={{ display: "flex", gap: 16, alignItems: "center" }}>
-          <span style={{ display: "flex", alignItems: "center", gap: 8 }}>
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img
-              src="/logo.png"
-              alt=""
-              height={24}
-              // Fixed height, auto width keeps the (non-square) logo undistorted.
-              style={{ height: 24, width: "auto", borderRadius: 6, display: "block" }}
-            />
-            <span style={{ fontWeight: 700, color: "var(--text)" }}>Tech Lead AI</span>
-          </span>
-          {isManager && <a href="/dashboard">Team</a>}
-          {isManager && <a href="/dashboard/prs">All PRs</a>}
-          {isManager && <a href="/dashboard/manage-conventions">Conventions</a>}
-          {isManager && <a href="/dashboard/review">Review a PR</a>}
-          {isManager && <a href="/dashboard/add-junior">Add junior</a>}
-        </nav>
-        <div style={{ display: "flex", gap: 12, alignItems: "center" }}>
+    <div className="dash-shell">
+      {/* Header. On desktop the brand, links, and user/sign-out sit on one
+          row; on mobile it splits into a pinned top row (brand + user/sign-out)
+          with the links on the row beneath (see globals.css). */}
+      <div className="dash-header">
+        <header className="dash-topbar">
+          <span className="dash-brand">
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
+            src="/logo.png"
+            alt=""
+            height={24}
+            // Fixed height, auto width keeps the (non-square) logo undistorted.
+            style={{ height: 24, width: "auto", borderRadius: 6, display: "block" }}
+          />
+          <span style={{ fontWeight: 700, color: "var(--text)" }}>Tech Lead AI</span>
+        </span>
+        <div className="dash-userbar">
           <span style={{ color: "var(--muted)", fontSize: 13 }}>
             {user.name} · {user.role}
           </span>
@@ -59,6 +47,26 @@ export default async function DashboardLayout({ children }: { children: ReactNod
           </form>
         </div>
       </header>
+
+      {/* Second row: the page links. */}
+      <nav className="dash-nav">
+        {isManager && <a href="/dashboard">Team</a>}
+        {isManager && <a href="/dashboard/prs">All PRs</a>}
+        {isManager && <a href="/dashboard/manage-conventions">Conventions</a>}
+        {/* "Review a PR" and "Add junior" are hidden on phones — they're
+            desk-bound manager actions, not something to trigger on the go. */}
+        {isManager && (
+          <a className="desktop-only" href="/dashboard/review">
+            Review a PR
+          </a>
+        )}
+        {isManager && (
+          <a className="desktop-only" href="/dashboard/add-junior">
+            Add junior
+          </a>
+        )}
+      </nav>
+      </div>
       {children}
     </div>
   );

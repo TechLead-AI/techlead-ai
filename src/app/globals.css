@@ -35,3 +35,246 @@ a {
 a:hover {
   text-decoration: underline;
 }
+
+/* ----------------------------------------------------------------------------
+ * Layout helpers
+ *
+ * Components keep their one-off styling inline; the rules below cover the bits
+ * that have to change between desktop and mobile, since inline styles can't hold
+ * media queries. The phone breakpoint is 640px.
+ * ------------------------------------------------------------------------- */
+
+/* The dashboard shell + top bar. */
+.dash-shell {
+  max-width: 980px;
+  margin: 0 auto;
+  padding: 24px;
+}
+
+/* Desktop: brand, page links, and user/sign-out all share one row. The
+   `display: contents` on the top row lets the brand and user/sign-out join the
+   header's flex line, so the links can sit between them. */
+.dash-header {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding-bottom: 16px;
+  border-bottom: 1px solid var(--border);
+  margin-bottom: 24px;
+}
+
+.dash-topbar {
+  display: contents;
+}
+
+/* order places the links between the brand and the user/sign-out on the one
+   desktop row; white-space keeps the "Tech Lead AI" wordmark on a single line. */
+.dash-brand {
+  order: 1;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  white-space: nowrap;
+}
+
+.dash-nav {
+  order: 2;
+  display: flex;
+  gap: 16px;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.dash-userbar {
+  order: 3;
+  margin-left: auto;
+  display: flex;
+  gap: 12px;
+  align-items: center;
+}
+
+/* The panel/card used across the dashboards. */
+.card {
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 20px;
+}
+
+.stat-label {
+  color: var(--muted);
+  font-size: 13px;
+}
+
+.stat-value {
+  font-size: 24px;
+  font-weight: 600;
+}
+
+/* A short row of stat cards that always sit side by side. */
+.stat-strip {
+  display: flex;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+
+/* A set of stat cards that wraps freely. */
+.stat-grid {
+  display: flex;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+
+/* Two cards side by side that stack on mobile (e.g. the chart pairs). */
+.two-col {
+  display: flex;
+  gap: 24px;
+  flex-wrap: wrap;
+  align-items: stretch;
+}
+
+.two-col > * {
+  flex: 1;
+  min-width: 280px;
+}
+
+/* Wraps wide content (tables, charts) so it scrolls instead of spilling out of
+   its card on a narrow screen. */
+.scroll-x {
+  overflow-x: auto;
+}
+
+/* Pie chart + its legend. The pie is a fixed square; the legend takes the rest
+   of the row and wraps its own text, so the two always sit side by side. */
+.pie-figure {
+  display: flex;
+  gap: 20px;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.pie-canvas {
+  position: relative;
+  width: var(--pie-size, 180px);
+  height: var(--pie-size, 180px);
+  flex-shrink: 0;
+}
+
+.pie-legend {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  font-size: 13px;
+  flex: 1;
+  min-width: 0;
+}
+
+@media (max-width: 640px) {
+  .dash-shell {
+    padding: 16px;
+  }
+
+  /* Drop the desktop one-row layout: let the top row and links become direct
+     children of the shell (a tall box) so the pinned top row can stay stuck
+     across the whole page. */
+  .dash-header {
+    display: contents;
+  }
+
+  /* Pin the brand + user/sign-out row to the top while scrolling, with the
+     separation line attached so it stays visible too. Negative side margins let
+     the background and line span the full screen width while the content stays
+     aligned with the page. */
+  .dash-topbar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+    position: sticky;
+    top: 0;
+    z-index: 10;
+    background: var(--bg);
+    margin: 0 -16px 16px;
+    padding: 12px 16px;
+    border-bottom: 1px solid var(--border);
+  }
+
+  /* The links sit on their own row beneath the pinned top row (no separation
+     line of their own — that lives on the top row now). */
+  .dash-nav {
+    margin-bottom: 24px;
+  }
+
+  /* Inside the top row the brand sits left and the user/sign-out right; reset
+     the desktop ordering that was meant for the single-row layout. */
+  .dash-brand {
+    order: 0;
+  }
+
+  .dash-userbar {
+    order: 0;
+    margin-left: 0;
+  }
+
+  /* Shrink the pie so it and its legend fit on one row on a phone. */
+  .pie-figure {
+    gap: 12px;
+    flex-wrap: nowrap;
+  }
+
+  .pie-canvas {
+    width: 130px;
+    height: 130px;
+  }
+
+  .pie-legend {
+    font-size: 12px;
+  }
+
+  .card {
+    padding: 14px;
+  }
+
+  .stat-value {
+    font-size: 20px;
+  }
+
+  .stat-label {
+    font-size: 12px;
+  }
+
+  /* Keep the small stat cards on one row, sharing the width evenly. */
+  .stat-strip {
+    display: grid;
+    grid-auto-flow: column;
+    grid-auto-columns: 1fr;
+    gap: 10px;
+  }
+
+  /* Several stat cards read better two-up than crammed into a single row. */
+  .stat-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+  }
+
+  /* Stack the side-by-side cards, and let them shrink to the screen width
+     (the 280px floor is only needed to force a wrap on wider screens). */
+  .two-col {
+    flex-direction: column;
+    gap: 16px;
+  }
+
+  .two-col > * {
+    min-width: 0;
+  }
+}
+
+/* Hide desk-bound manager actions (Review a PR, Add junior, saving conventions)
+   on phones. Width alone misses landscape, where the phone is wide — so we also
+   match touch devices that have no hover, catching a flipped phone too. */
+@media (max-width: 640px), (hover: none) and (pointer: coarse) {
+  .desktop-only {
+    display: none;
+  }
+}
