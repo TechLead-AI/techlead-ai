@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, type ReactNode } from "react";
+import { useState, type CSSProperties, type ReactNode } from "react";
 import { useElementWidth } from "./use-element-width";
 import type { CountSlice, DayCount } from "@/server/stats/pr-stats";
 
@@ -35,9 +35,19 @@ export function PieChart({ data, size = FIGURE_HEIGHT }: { data: CountSlice[]; s
   const single = colored.length === 1;
 
   return (
-    <div style={{ display: "flex", gap: 20, alignItems: "center", flexWrap: "wrap" }}>
-      <div style={{ position: "relative", width: size, height: size }}>
-        <svg width={size} height={size} role="img" aria-label="PRs per junior">
+    // pie + legend always share one row; on mobile the pie shrinks (see
+    // globals.css) and the legend takes the rest, so names never wrap below it.
+    <div className="pie-figure">
+      <div className="pie-canvas" style={{ "--pie-size": `${size}px` } as CSSProperties}>
+        {/* viewBox lets the drawing scale cleanly when the box shrinks. */}
+        <svg
+          viewBox={`0 0 ${size} ${size}`}
+          width="100%"
+          height="100%"
+          role="img"
+          aria-label="PRs per junior"
+          style={{ display: "block" }}
+        >
           {single ? (
             <SliceLink href={colored[0].href}>
               <circle
@@ -58,8 +68,8 @@ export function PieChart({ data, size = FIGURE_HEIGHT }: { data: CountSlice[]; s
           <div
             style={{
               position: "absolute",
-              left: r,
-              top: r,
+              left: "50%",
+              top: "50%",
               transform: "translate(-50%, -50%)",
               background: "var(--panel-2)",
               border: "1px solid var(--border)",
@@ -79,7 +89,7 @@ export function PieChart({ data, size = FIGURE_HEIGHT }: { data: CountSlice[]; s
         )}
       </div>
 
-      <ul style={{ listStyle: "none", margin: 0, padding: 0, fontSize: 13 }}>
+      <ul className="pie-legend">
         {colored.map((d, i) => (
           <li
             key={d.label}

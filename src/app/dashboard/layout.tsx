@@ -56,12 +56,12 @@ export default async function DashboardLayout({ children }: { children: ReactNod
         {/* "Review a PR" and "Add junior" are hidden on phones — they're
             desk-bound manager actions, not something to trigger on the go. */}
         {isManager && (
-          <a className="nav-desktop-only" href="/dashboard/review">
+          <a className="desktop-only" href="/dashboard/review">
             Review a PR
           </a>
         )}
         {isManager && (
-          <a className="nav-desktop-only" href="/dashboard/add-junior">
+          <a className="desktop-only" href="/dashboard/add-junior">
             Add junior
           </a>
         )}

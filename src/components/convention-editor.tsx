@@ -74,7 +74,8 @@ export function ConventionEditor({
             fontSize: 13,
           }}
         />
-        <div>
+        {/* Editing conventions is a desk task — hide the save/create on phones. */}
+        <div className="desktop-only">
           <button
             type="submit"
             style={{
