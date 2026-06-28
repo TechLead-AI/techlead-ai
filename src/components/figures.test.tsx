@@ -69,4 +69,14 @@ describe("Histogram", () => {
     expect(screen.getByText("#1 first")).toBeInTheDocument();
     expect(screen.getByText("#2 second")).toBeInTheDocument();
   });
+
+  it("keeps the plot area non-negative at a sliver width", () => {
+    // Below the floor the x-axis would invert (x2 < x1). It must not.
+    const { container } = render(<Histogram data={sample} width={20} />);
+    const lines = [...container.querySelectorAll("line")];
+    const xAxis = lines.find((l) => l.getAttribute("y1") === l.getAttribute("y2"))!;
+    expect(Number(xAxis.getAttribute("x2"))).toBeGreaterThan(
+      Number(xAxis.getAttribute("x1")),
+    );
+  });
 });

@@ -23,6 +23,9 @@ export interface LinePoint {
 }
 
 const MARGIN = { top: 10, right: 12, bottom: 22, left: 34 };
+// Floor so a sliver-width container can't push the plot area negative (which
+// would invert the axes and produce NaN coordinates). Real containers are wider.
+const MIN_PLOT_WIDTH = 180;
 
 /**
  * A line chart of a numeric series (e.g. issue density over time) with x and y
@@ -43,7 +46,8 @@ export function LineChart({
 }) {
   const [hover, setHover] = useState<number | null>(null);
   // Fill the card on wide screens; shrink to fit on a phone.
-  const { ref, width: w } = useElementWidth(width);
+  const { ref, width: measuredW } = useElementWidth(width);
+  const w = Math.max(measuredW, MIN_PLOT_WIDTH);
 
   if (points.length === 0) {
     return <p style={{ color: "var(--muted)" }}>No data yet.</p>;

@@ -166,6 +166,10 @@ function SliceLink({ href, children }: { href?: string; children: ReactNode }) {
 const HMARGIN = { top: 10, right: 10, bottom: 42, left: 26 };
 // At most this many PR titles in the hover popover; the rest are summarised.
 const POPOVER_LIMIT = 6;
+// Never draw narrower than this: below it the plot area would go negative (axes
+// invert, bars flip, the 180px tooltip overflows). A real container is always
+// wider; this is just a floor so the geometry stays sane on a sliver of a screen.
+const MIN_PLOT_WIDTH = 180;
 
 /**
  * A vertical-bar histogram of PRs per day. Hovering a day with PRs shows the
@@ -184,7 +188,8 @@ export function Histogram({
 }) {
   const [hover, setHover] = useState<number | null>(null);
   // Fill the card on wide screens; shrink to fit on a phone.
-  const { ref, width: w } = useElementWidth(width);
+  const { ref, width: measuredW } = useElementWidth(width);
+  const w = Math.max(measuredW, MIN_PLOT_WIDTH);
 
   if (data.length === 0) return <p style={{ color: "var(--muted)" }}>No data yet.</p>;
 
