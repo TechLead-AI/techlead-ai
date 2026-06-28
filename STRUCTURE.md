@@ -13,8 +13,18 @@
 | `DEPLOY.md` | How to deploy the web app + worker + Postgres to Railway |
 | `CLAUDE.md` | How to write code in this repo |
 | `STRUCTURE.md` | This file — the codebase map |
-| `PRESENTATION.md` | Project presentation (purpose, architecture, flow) with embedded screenshots |
-| `docs/screenshots/` | Dashboard screenshots used by `PRESENTATION.md` (generated) |
+| `presentation/` | The competition deck and its source docs (see below) |
+| `.deckbuild/build.cjs` | pptxgenjs script that builds `presentation/PRESENTATION.pptx` (needs pptxgenjs, react-icons, react, react-dom, sharp — installed at the repo root) |
+| `docs/screenshots/` | Dashboard screenshots used by the deck (generated) |
+
+## Presentation
+
+| Path | Purpose |
+|------|---------|
+| `presentation/PRESENTATION.pptx` | The competition slide deck (9 slides, dark theme) |
+| `presentation/PRESENTATION_OUTLINE.md` | Slide-by-slide deck brief (English) — the content source for the deck |
+| `presentation/PRESENTATION_RULES.md` | Blueprint for a winning competition talk (structure + timing) |
+| `presentation/url_as_qr.png` | QR code to the live app — embedded on the deck's brand + demo slides |
 
 ## Stack
 
