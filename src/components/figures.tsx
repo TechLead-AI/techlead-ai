@@ -134,9 +134,32 @@ function slicePaths(
 ) {
   let angle = -Math.PI / 2; // start at 12 o'clock
   return data.map((d, i) => {
+    // A zero slice has nothing to draw; skip it (an arc of width 0 would be a
+    // degenerate, invisible sliver). It still appears in the legend.
+    if (d.count <= 0) return null;
+
     const start = angle;
     const end = angle + (d.count / total) * 2 * Math.PI;
     angle = end;
+
+    const shared = {
+      fill: d.color,
+      opacity: hover === null || hover === i ? 1 : 0.5,
+      onMouseEnter: () => setHover(i),
+      onMouseLeave: () => setHover(null),
+      style: { cursor: d.href ? "pointer" : "default" },
+    };
+
+    // A slice that is the whole pie can't be drawn as one arc — its start and
+    // end points coincide, so the path collapses to nothing. Draw a full circle.
+    if (d.count >= total) {
+      return (
+        <SliceLink key={d.label} href={d.href}>
+          <circle cx={r} cy={r} r={r} {...shared} />
+        </SliceLink>
+      );
+    }
+
     const large = end - start > Math.PI ? 1 : 0;
     const x1 = r + r * Math.cos(start);
     const y1 = r + r * Math.sin(start);
@@ -145,14 +168,7 @@ function slicePaths(
     const path = `M ${r} ${r} L ${x1.toFixed(2)} ${y1.toFixed(2)} A ${r} ${r} 0 ${large} 1 ${x2.toFixed(2)} ${y2.toFixed(2)} Z`;
     return (
       <SliceLink key={d.label} href={d.href}>
-        <path
-          d={path}
-          fill={d.color}
-          opacity={hover === null || hover === i ? 1 : 0.5}
-          onMouseEnter={() => setHover(i)}
-          onMouseLeave={() => setHover(null)}
-          style={{ cursor: d.href ? "pointer" : "default" }}
-        />
+        <path d={path} {...shared} />
       </SliceLink>
     );
   });

@@ -27,22 +27,38 @@ export function NewReviewPopup({ notice }: { notice: LatestReviewNotice }) {
     let alreadySeen = false;
     try {
       alreadySeen = window.localStorage.getItem(SEEN_KEY) === notice.reviewId;
-      // Mark it seen now so the next refresh/navigation won't show it again.
-      window.localStorage.setItem(SEEN_KEY, notice.reviewId);
     } catch {
       // Private mode / storage disabled: just show it this once.
     }
     if (!alreadySeen) setOpen(true);
   }, [notice.reviewId]);
 
+  // Mark this review seen only once the manager actually dismisses or acts on
+  // it — never merely on mount. Otherwise a fast navigation past the popup
+  // would record it as seen and the manager would never see it again.
+  function markSeen() {
+    try {
+      window.localStorage.setItem(SEEN_KEY, notice.reviewId);
+    } catch {
+      // Private mode / storage disabled: nothing to remember.
+    }
+  }
+
+  function close() {
+    markSeen();
+    setOpen(false);
+  }
+
   // Let Escape close the popup, like any well-behaved dialog.
   useEffect(() => {
     if (!open) return;
     const onKey = (e: KeyboardEvent) => {
-      if (e.key === "Escape") setOpen(false);
+      if (e.key === "Escape") close();
     };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
+    // `close` is stable enough here; re-bind only when open toggles.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open]);
 
   if (!open) return null;
@@ -53,7 +69,7 @@ export function NewReviewPopup({ notice }: { notice: LatestReviewNotice }) {
   return (
     // Clicking the backdrop (anywhere outside the card) closes the popup.
     <div
-      onClick={() => setOpen(false)}
+      onClick={close}
       style={{
         position: "fixed",
         inset: 0,
@@ -85,7 +101,7 @@ export function NewReviewPopup({ notice }: { notice: LatestReviewNotice }) {
         <button
           type="button"
           aria-label="Close"
-          onClick={() => setOpen(false)}
+          onClick={close}
           style={{
             position: "absolute",
             top: 12,
@@ -131,6 +147,7 @@ export function NewReviewPopup({ notice }: { notice: LatestReviewNotice }) {
 
         <a
           href={`/dashboard/prs/${notice.pullRequestId}`}
+          onClick={markSeen}
           style={{
             display: "inline-block",
             marginTop: 16,

@@ -23,6 +23,18 @@ describe("PieChart", () => {
     expect(container.querySelector("circle")).not.toBeNull();
   });
 
+  it("draws a full circle (not an invisible arc) when one author holds every PR", () => {
+    const { container } = render(
+      <PieChart data={[{ label: "Solo", count: 5 }, { label: "None", count: 0 }]} />,
+    );
+    // The 100% slice is a circle; the 0% slice draws nothing (no degenerate path).
+    expect(container.querySelector("circle")).not.toBeNull();
+    expect(container.querySelectorAll("path")).toHaveLength(0);
+    // Both still appear in the legend.
+    expect(screen.getByText("Solo")).toBeInTheDocument();
+    expect(screen.getByText("None")).toBeInTheDocument();
+  });
+
   it("links each slice and legend row to its filtered view when given an href", () => {
     const { container } = render(
       <PieChart

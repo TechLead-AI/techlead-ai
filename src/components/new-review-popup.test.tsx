@@ -63,16 +63,27 @@ describe("NewReviewPopup", () => {
     expect(screen.queryByRole("dialog")).toBeNull();
   });
 
-  it("does not show again once the review has been seen", async () => {
-    // First mount marks rev_1 as seen.
+  it("does not show again once the review has been dismissed", async () => {
+    // Dismissing (not merely mounting) is what marks rev_1 as seen.
     const first = render(<NewReviewPopup notice={notice} />);
-    await screen.findByRole("dialog");
+    fireEvent.click(await screen.findByRole("button", { name: "Close" }));
     first.unmount();
 
     // A fresh mount of the same review id stays hidden.
     render(<NewReviewPopup notice={notice} />);
     await Promise.resolve();
     expect(screen.queryByRole("dialog")).toBeNull();
+  });
+
+  it("shows again on a fresh mount if it was never dismissed", async () => {
+    // Mounting then navigating away (without dismissing) must NOT mark it seen,
+    // so the manager still gets to see it next time.
+    const first = render(<NewReviewPopup notice={notice} />);
+    await screen.findByRole("dialog");
+    first.unmount();
+
+    render(<NewReviewPopup notice={notice} />);
+    await waitFor(() => expect(screen.getByRole("dialog")).toBeInTheDocument());
   });
 
   it("shows again when a different (newer) review arrives", async () => {
