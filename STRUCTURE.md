@@ -85,7 +85,7 @@ Each module is small files with co-located `*.test.ts`.
       stats/pr-stats.ts       # pure PR aggregations: per-author, per-day (+ test)
       review/
         types.ts              # ReviewComment schema + severity weights
-        reviewer.ts           # Reviewer interface + offline FakeReviewer
+        reviewer.ts           # Reviewer interface + offline FakeReviewer (+ test)
         anthropic-reviewer.ts # Claude-backed reviewer
         factory.ts            # picks fake vs Claude by env
         gates.ts              # confidence + nit-budget gates (component 4)
